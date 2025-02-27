@@ -1,4 +1,5 @@
 const express = require("express");
+
 const {
   getAllProducts,
   getProductById,
@@ -6,6 +7,8 @@ const {
   updateProduct,
   deleteProduct,
   getLowStockProducts,
+  viewProducts,
+  importProducts,
 } = require("../controllers/productController");
 
 const router = express.Router();

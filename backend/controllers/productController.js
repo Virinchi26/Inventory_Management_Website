@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid"); // Import UUID generator
 const db = require("../db");
 
+
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
@@ -215,3 +216,5 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+

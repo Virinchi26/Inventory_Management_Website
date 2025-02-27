@@ -8,7 +8,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { fetchProducts, deleteProduct } from "../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
-// import ExportDataButton from "../../data/export_data";
+import ExportButton from "../../components/ExportButton";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -196,7 +196,7 @@ const Products = () => {
           },
         }}
       >
-        {/* <ExportDataButton data={products} /> */}
+        <ExportButton data={products} />
 
         <DataGrid
           rows={products}

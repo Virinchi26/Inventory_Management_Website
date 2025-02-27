@@ -37,7 +37,6 @@ export const fetchLowStockProducts = async () => {
   }
 };
 
-
 // ✅ Add a new product
 export const addProduct = async (productData) => {
   try {
