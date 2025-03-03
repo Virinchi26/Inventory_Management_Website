@@ -79,3 +79,16 @@ export const deleteProduct = async (id) => {
     return { success: false, message: "Error deleting product" };
   }
 };
+
+// Function to send JSON data to backend
+export const importProducts = async (products) => {
+  try {
+    const response = await axios.post(`${API_URL}/import`, products, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data; // Return success response
+  } catch (error) {
+    console.error("❌ Error uploading file:", error);
+    throw error; // Throw error to be handled in ImportButton.jsx
+  }
+};
