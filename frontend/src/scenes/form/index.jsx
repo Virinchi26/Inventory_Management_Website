@@ -195,6 +195,20 @@ const Form = () => {
                 fullWidth
                 variant="filled"
                 type="number"
+                label="Regular Price"
+                onBlur={handleBlur}
+                onChange={handleChange}
+                value={values.regular_price}
+                name="regular_price"
+                error={!!touched.regular_price && !!errors.regular_price}
+                helperText={touched.regular_price && errors.regular_price}
+                sx={{ gridColumn: "span 1" }}
+              />
+
+              <TextField
+                fullWidth
+                variant="filled"
+                type="number"
                 label="Purchase Price"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -373,6 +387,7 @@ const checkoutSchema = yup.object().shape({
   brand_name: yup.string(),
   lot_number: yup.number(),
   expire_date: yup.date(),
+  regular_price: yup.number().required("required"),
   purchase_price: yup.number().required("required"),
   tax_name: yup.string().required("required"),
   tax_value: yup.number().required("required"),
@@ -393,6 +408,7 @@ const initialValues = {
   brand_name: "",
   lot_number: 0,
   expire_date: "",
+  regular_price: 0,
   purchase_price: 0,
   tax_name: "",
   tax_value: 0,

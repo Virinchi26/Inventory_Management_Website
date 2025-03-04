@@ -41,6 +41,7 @@ const ExportButton = ({ data }) => {
       "Brand",
       "Lot No.",
       "Expiry",
+      "Regular Price",
       "Purchase Price",
       "Tax Details",
       "Sales Price",
@@ -58,6 +59,7 @@ const ExportButton = ({ data }) => {
       item.brand_name,
       item.lot_number,
       formatDate(item.expire_date), // Format Expiry Date
+      item.regular_price,
       item.purchase_price,
       `${item.tax_name}\nValue: ${item.tax_value}%\nType: ${item.tax_type}`, // Tax Details
       item.sales_price,

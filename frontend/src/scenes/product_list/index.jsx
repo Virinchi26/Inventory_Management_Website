@@ -86,6 +86,12 @@ const Products = () => {
     //   flex: 2,
     // },
     {
+      field: "regular_price",
+      headerName: "Regular Price",
+      flex: 2,
+    },
+
+    {
       field: "purchase_price",
       headerName: "Purchase Price",
       flex: 2,

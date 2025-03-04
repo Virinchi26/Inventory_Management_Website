@@ -75,6 +75,7 @@ exports.importProducts = async (req, res) => {
         brand_name,
         lot_number,
         expire_date,
+        regular_price,
         purchase_price,
         tax_name,
         tax_value,
@@ -115,7 +116,7 @@ exports.importProducts = async (req, res) => {
         await db.execute(
           `UPDATE products 
            SET item_name=?, category_name=?, hsn=?, unit_name=?, alert_quantity=?, brand_name=?, 
-               lot_number=?, expire_date=?, purchase_price=?, tax_name=?, tax_value=?, tax_type=?, 
+               lot_number=?, expire_date=?,regular_price=?, purchase_price=?, tax_name=?, tax_value=?, tax_type=?, 
                sales_price=?, opening_stock=?, discount_type=?, discount=? 
            WHERE sku=? OR barcode=?`,
           [
@@ -127,6 +128,7 @@ exports.importProducts = async (req, res) => {
             brand_name,
             lot_number,
             formattedExpireDate,
+            regular_price,
             purchase_price,
             tax_name,
             tax_value,
@@ -144,9 +146,9 @@ exports.importProducts = async (req, res) => {
         // ✅ If product does not exist, insert a new record
         await db.execute(
           `INSERT INTO products (item_name, category_name, sku, hsn, unit_name, alert_quantity, brand_name, 
-          lot_number, expire_date, purchase_price, tax_name, tax_value, tax_type, sales_price, opening_stock, 
+          lot_number, expire_date,regular_price, purchase_price, tax_name, tax_value, tax_type, sales_price, opening_stock, 
           barcode, discount_type, discount) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             item_name,
             category_name,
@@ -157,6 +159,7 @@ exports.importProducts = async (req, res) => {
             brand_name,
             lot_number,
             formattedExpireDate,
+            regular_price,
             purchase_price,
             tax_name,
             tax_value,
@@ -191,6 +194,7 @@ exports.addProduct = async (req, res) => {
       brand_name,
       lot_number,
       expire_date,
+      regular_price,
       purchase_price,
       tax_name,
       tax_value,
@@ -215,7 +219,7 @@ exports.addProduct = async (req, res) => {
 
     // Insert product
     const result = await db.query(
-      "INSERT INTO products (item_name, category_name, sku, hsn, unit_name, alert_quantity, brand_name, lot_number, expire_date, purchase_price, tax_name, tax_value, tax_type, sales_price, opening_stock, barcode, discount_type, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO products (item_name, category_name, sku, hsn, unit_name, alert_quantity, brand_name, lot_number, expire_date,regular_price, purchase_price, tax_name, tax_value, tax_type, sales_price, opening_stock, barcode, discount_type, discount) VALUES (?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         item_name,
         category_name,
@@ -226,6 +230,7 @@ exports.addProduct = async (req, res) => {
         brand_name,
         lot_number,
         expire_date,
+        regular_price,
         purchase_price,
         tax_name,
         tax_value,
@@ -267,6 +272,7 @@ exports.updateProduct = async (req, res) => {
       brand_name,
       lot_number,
       expire_date,
+      regular_price,
       purchase_price,
       tax_name,
       tax_value,
@@ -299,7 +305,7 @@ exports.updateProduct = async (req, res) => {
     }
 
     await db.query(
-      "UPDATE products SET item_name=?, category_name=?, sku=?, hsn=?, unit_name=?, alert_quantity=?, brand_name=?, lot_number=?, expire_date=?, purchase_price=?, tax_name=?, tax_value=?, tax_type=?, sales_price=?, opening_stock=?, barcode=?, discount_type=?, discount=? WHERE id=?",
+      "UPDATE products SET item_name=?, category_name=?, sku=?, hsn=?, unit_name=?, alert_quantity=?, brand_name=?, lot_number=?, expire_date=?,regular_price=?, purchase_price=?, tax_name=?, tax_value=?, tax_type=?, sales_price=?, opening_stock=?, barcode=?, discount_type=?, discount=? WHERE id=?",
       [
         item_name,
         category_name,
@@ -310,6 +316,7 @@ exports.updateProduct = async (req, res) => {
         brand_name,
         lot_number,
         expire_date,
+        regular_price,
         purchase_price,
         tax_name,
         tax_value,
