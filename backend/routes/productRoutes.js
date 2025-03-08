@@ -8,7 +8,6 @@ const {
   deleteProduct,
   getLowStockProducts,
   importProducts,
-  // viewProducts,
 } = require("../controllers/productController");
 
 const router = express.Router();

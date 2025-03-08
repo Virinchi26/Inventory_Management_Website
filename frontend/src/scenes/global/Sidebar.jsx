@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
 import AddIcon from "@mui/icons-material/Add";
-// import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
+import AddLocationIcon from "@mui/icons-material/AddLocation";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
@@ -131,6 +131,22 @@ const Sidebar = () => {
               color={colors.grey[300]}
               sx={{ m: "15px 0 5px 20px" }}
             >
+              Wearhouse
+            </Typography>
+
+            <Item
+              title="Add Product Location"
+              to="/add-product-location"
+              icon={<AddLocationIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+
+            <Typography
+              variant="h6"
+              color={colors.grey[300]}
+              sx={{ m: "15px 0 5px 20px" }}
+            >
               Data
             </Typography>
             {/* <Item
@@ -155,7 +171,7 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
             <Item
-              title="Add Item"
+              title="Add Product"
               to="/form"
               icon={<AddIcon />}
               selected={selected}

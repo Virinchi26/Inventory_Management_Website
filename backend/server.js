@@ -3,6 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const productRoutes = require("./routes/productRoutes");
+const warehouseRoutes = require("./routes/warehouseRoutes");
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/products", productRoutes);
+app.use("/api/warehouse", warehouseRoutes); 
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
