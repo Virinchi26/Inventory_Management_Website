@@ -64,8 +64,10 @@ exports.importProducts = async (req, res) => {
       await db.query("ALTER TABLE products AUTO_INCREMENT = 1");
     }
 
+    let invalidProducts = [];
+
     for (const product of products) {
-      const {
+      let {
         item_name,
         category_name,
         sku,
@@ -105,6 +107,16 @@ exports.importProducts = async (req, res) => {
         }
       }
 
+      // ✅ Check if `sales_price` is greater than `regular_price`
+      if (sales_price > regular_price) {
+        invalidProducts.push({
+          item_name,
+          sku,
+          message: "Sales price cannot be greater than regular price.",
+        });
+        continue; // Skip this product and move to the next one
+      }
+
       // ✅ Check if the product exists by SKU or Barcode
       const [existingProduct] = await db.execute(
         "SELECT * FROM products WHERE sku = ? OR barcode = ?",
@@ -112,31 +124,65 @@ exports.importProducts = async (req, res) => {
       );
 
       if (existingProduct.length > 0) {
-        // ✅ If product exists, update it
+        const existingData = existingProduct[0]; // Get existing values
+
+        // ✅ If product exists, update it (only change non-null fields)
         await db.execute(
           `UPDATE products 
-           SET item_name=?, category_name=?, hsn=?, unit_name=?, alert_quantity=?, brand_name=?, 
-               lot_number=?, expire_date=?,regular_price=?, purchase_price=?, tax_name=?, tax_value=?, tax_type=?, 
-               sales_price=?, opening_stock=?, discount_type=?, discount=? 
-           WHERE sku=? OR barcode=?`,
+           SET item_name = ?, category_name = ?, hsn = ?, unit_name = ?, alert_quantity = ?, brand_name = ?, 
+               lot_number = ?, expire_date = ?, regular_price = ?, purchase_price = ?, tax_name = ?, tax_value = ?, tax_type = ?, 
+               sales_price = ?, opening_stock = ?, discount_type = ?, discount = ? 
+           WHERE sku = ? OR barcode = ?`,
           [
-            item_name,
-            category_name,
-            hsn,
-            unit_name,
-            alert_quantity,
-            brand_name,
-            lot_number,
-            formattedExpireDate,
-            regular_price,
-            purchase_price,
-            tax_name,
-            tax_value,
-            tax_type,
-            sales_price,
-            opening_stock,
-            discount_type,
-            discount,
+            item_name !== null && item_name !== ""
+              ? item_name
+              : existingData.item_name,
+            category_name !== null && category_name !== ""
+              ? category_name
+              : existingData.category_name,
+            hsn !== null && hsn !== "" ? hsn : existingData.hsn,
+            unit_name !== null && unit_name !== ""
+              ? unit_name
+              : existingData.unit_name,
+            alert_quantity !== null && alert_quantity !== ""
+              ? alert_quantity
+              : existingData.alert_quantity,
+            brand_name !== null && brand_name !== ""
+              ? brand_name
+              : existingData.brand_name,
+            lot_number !== null && lot_number !== ""
+              ? lot_number
+              : existingData.lot_number,
+            formattedExpireDate !== null && formattedExpireDate !== ""
+              ? formattedExpireDate
+              : existingData.expire_date,
+            regular_price !== null && regular_price !== ""
+              ? regular_price
+              : existingData.regular_price,
+            purchase_price !== null && purchase_price !== ""
+              ? purchase_price
+              : existingData.purchase_price,
+            tax_name !== null && tax_name !== ""
+              ? tax_name
+              : existingData.tax_name,
+            tax_value !== null && tax_value !== ""
+              ? tax_value
+              : existingData.tax_value,
+            tax_type !== null && tax_type !== ""
+              ? tax_type
+              : existingData.tax_type,
+            sales_price !== null && sales_price !== ""
+              ? sales_price
+              : existingData.sales_price,
+            opening_stock !== null && opening_stock !== ""
+              ? opening_stock
+              : existingData.opening_stock,
+            discount_type !== null && discount_type !== ""
+              ? discount_type
+              : existingData.discount_type,
+            discount !== null && discount !== ""
+              ? discount
+              : existingData.discount,
             sku,
             barcode,
           ]
@@ -146,9 +192,9 @@ exports.importProducts = async (req, res) => {
         // ✅ If product does not exist, insert a new record
         await db.execute(
           `INSERT INTO products (item_name, category_name, sku, hsn, unit_name, alert_quantity, brand_name, 
-          lot_number, expire_date,regular_price, purchase_price, tax_name, tax_value, tax_type, sales_price, opening_stock, 
+          lot_number, expire_date, regular_price, purchase_price, tax_name, tax_value, tax_type, sales_price, opening_stock, 
           barcode, discount_type, discount) 
-          VALUES (?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             item_name,
             category_name,
@@ -175,7 +221,11 @@ exports.importProducts = async (req, res) => {
       }
     }
 
-    res.status(200).json({ message: "Products imported successfully!" });
+    // ✅ Send response with skipped products
+    res.status(200).json({
+      message: "Products imported successfully!",
+      skipped_products: invalidProducts.length > 0 ? invalidProducts : null,
+    });
   } catch (error) {
     console.error("❌ Error importing products:", error);
     res.status(500).json({ error: "Internal server error" });

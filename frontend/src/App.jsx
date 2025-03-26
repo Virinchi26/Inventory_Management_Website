@@ -16,6 +16,9 @@ import Geography from "./scenes/geography";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
 import LowStock from "./scenes/low_stock";
+import WearhouseHandle from "./scenes/wearhouse";
+import WarehouseStock from "./scenes/wearhouse_stock";
+import TransferStock from "./scenes/transfer_stock";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -40,10 +43,15 @@ function App() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/bar" element={<Bar />} />
               <Route path="/pie" element={<Pie />} />
-
               <Route path="/line" element={<Line />} />
-
               <Route path="/geography" element={<Geography />} />
+
+              <Route
+                path="/add-product-location"
+                element={<WearhouseHandle />}
+              />
+              <Route path="/wearhouse-stock" element={<WarehouseStock />} />
+              <Route path="/transfer-stock" element={<TransferStock />} />
             </Routes>
           </main>
         </div>

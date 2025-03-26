@@ -16,6 +16,7 @@ import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import IosShareIcon from "@mui/icons-material/IosShare";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -135,9 +136,25 @@ const Sidebar = () => {
             </Typography>
 
             <Item
+              title="Wearhouse Stock"
+              to="/wearhouse-stock"
+              icon={<InventoryIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+
+            <Item
               title="Add Product Location"
               to="/add-product-location"
               icon={<AddLocationIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+
+            <Item
+              title="Transfer Stock"
+              to="/transfer-stock"
+              icon={<IosShareIcon />}
               selected={selected}
               setSelected={setSelected}
             />
@@ -149,13 +166,7 @@ const Sidebar = () => {
             >
               Data
             </Typography>
-            {/* <Item
-              title="Manage Team"
-              to="/team"
-              icon={<PeopleOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            /> */}
+
             <Item
               title="Low Stock"
               to="/low-stock"
