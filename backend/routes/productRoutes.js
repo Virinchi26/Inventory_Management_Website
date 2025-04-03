@@ -8,6 +8,7 @@ const {
   deleteProduct,
   getLowStockProducts,
   importProducts,
+  checkProductByBarcode,
 } = require("../controllers/productController");
 
 const router = express.Router();
@@ -15,6 +16,8 @@ const router = express.Router();
 router.get("/", getAllProducts);
 router.get("/low-stock", getLowStockProducts); // New route
 router.get("/:id", getProductById);
+router.get("/check-product/:barcode", checkProductByBarcode);
+
 router.post("/", addProduct);
 router.post("/import", importProducts);
 

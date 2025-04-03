@@ -116,11 +116,11 @@ const Products = () => {
       headerName: "Sales Price",
       flex: 2,
     },
-    // {
-    //   field: "opening_stock",
-    //   headerName: "Opening Stock",
-    //   flex: 2,
-    // },
+    {
+      field: "opening_stock",
+      headerName: "Stock Quantity",
+      flex: 2,
+    },
     // {
     //   field: "barcode",
     //   headerName: "Barcode",
@@ -206,6 +206,7 @@ const Products = () => {
         <ExportButton data={products} />
         <ImportButton onImportSuccess={fetchProducts} />
 
+        {/* Add Update Button */}
         <DataGrid
           rows={products}
           columns={columns}

@@ -46,3 +46,17 @@ export const transferStock = async (data) => {
     return { success: false, message: "Error transferring stock" };
   }
 };
+
+export const importWarehouseProducts = async (formData) => {
+  try {
+    const response = await fetch(`${API_URL}/import-warehouse-products`, {
+      method: "POST",
+      body: formData, // FormData for file upload
+    });
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error importing warehouse products:", error);
+    throw error;
+  }
+};

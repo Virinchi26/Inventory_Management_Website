@@ -19,6 +19,7 @@ import LowStock from "./scenes/low_stock";
 import WearhouseHandle from "./scenes/wearhouse";
 import WarehouseStock from "./scenes/wearhouse_stock";
 import TransferStock from "./scenes/transfer_stock";
+import AddLocation from "./scenes/add_locations";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -50,7 +51,11 @@ function App() {
                 path="/add-product-location"
                 element={<WearhouseHandle />}
               />
-              <Route path="/wearhouse-stock" element={<WarehouseStock />} />
+              <Route
+                path="/add-locations"
+                element={<AddLocation />}
+              />
+              <Route path="/warehouse-stock" element={<WarehouseStock />} />
               <Route path="/transfer-stock" element={<TransferStock />} />
             </Routes>
           </main>

@@ -137,7 +137,7 @@ const Sidebar = () => {
 
             <Item
               title="Wearhouse Stock"
-              to="/wearhouse-stock"
+              to="/warehouse-stock"
               icon={<InventoryIcon />}
               selected={selected}
               setSelected={setSelected}
@@ -151,6 +151,13 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
 
+            <Item
+              title="Add Locations"
+              to="/add-locations"
+              icon={<AddLocationIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
             <Item
               title="Transfer Stock"
               to="/transfer-stock"

@@ -1,18 +1,29 @@
+import { useState, useEffect } from "react";
 import { Box, Button, TextField } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
-// import { MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 import ProductDropdown from "../../components/ProductDropdown";
+import LocationDropdown from "../../components/LocationDropdown";
 import { addWarehouseStock } from "../../services/wearhouse_api";
+import { checkProductExists } from "../../services/api"; // Import the function to check product existence
+import ImportButtonWearhouse from "../../components/ImportButtonWearhouse";
 
-const WearhouseHandle = () => {
+const WarehouseHandle = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
 
   const handleFormSubmit = async (values, { resetForm }) => {
     try {
-      // Call API to add stock to warehouse
+      // Check if product exists before adding stock
+      const productExists = await checkProductExists(values.barcode);
+
+      if (!productExists) {
+        alert("❌ Product not found! Please add it to the product list first.");
+        return;
+      }
+
+      // Add stock to warehouse
       const response = await addWarehouseStock(values);
       alert(response.message);
       resetForm();
@@ -24,12 +35,16 @@ const WearhouseHandle = () => {
 
   return (
     <Box m="20px">
-      <Header title="Add Product" subtitle="Add Product in Wearhouse" />
+      <Header
+        title="Add Product to Warehouse"
+        subtitle="Manage Warehouse Stock"
+      />
+      <ImportButtonWearhouse />
 
       <Formik
         onSubmit={handleFormSubmit}
         initialValues={initialValues}
-        validationSchema={checkoutSchema}
+        validationSchema={stockSchema}
       >
         {({
           values,
@@ -49,42 +64,52 @@ const WearhouseHandle = () => {
                 "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
               }}
             >
-              {/* 🔽 Product Dropdown (Fetches `item_name`, stores as `product_name`) */}
+              {/* 🔽 Product Dropdown */}
               <ProductDropdown
                 values={values}
-                setFieldValue={setFieldValue} // To update SKU when product is selected
+                setFieldValue={(field, value) => {
+                  setFieldValue(field, value);
+                  if (field === "barcode" && value) {
+                    // Auto-increment stock when barcode is detected
+                    setFieldValue("stock_quantity", values.stock_quantity + 1);
+                  }
+                }}
                 handleBlur={handleBlur}
                 touched={touched}
                 errors={errors}
               />
 
-              {/* 🔽 Location Input */}
+              {/* 🔽 Barcode Field (Auto-filled) */}
               <TextField
                 fullWidth
                 variant="filled"
                 type="text"
-                label="Location Name"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.location_name}
-                name="location_name"
-                error={!!touched.location_name && !!errors.location_name}
-                helperText={touched.location_name && errors.location_name}
+                label="Barcode"
+                value={values.barcode}
+                name="barcode"
+                disabled
                 sx={{ gridColumn: "span 2" }}
               />
 
-              {/* 🔽 Stock Quantity Input */}
+              {/* 🔽 Location Dropdown */}
+              <LocationDropdown
+                values={values}
+                setFieldValue={setFieldValue}
+                handleBlur={handleBlur}
+                touched={touched}
+                errors={errors}
+              />
+
+              {/* 🔽 Stock Quantity (Auto-updated by Barcode Scan) */}
               <TextField
                 fullWidth
                 variant="filled"
                 type="number"
                 label="Stock Quantity"
-                onBlur={handleBlur}
-                onChange={handleChange}
                 value={values.stock_quantity}
                 name="stock_quantity"
-                error={!!touched.stock_quantity && !!errors.stock_quantity}
-                helperText={touched.stock_quantity && errors.stock_quantity}
+                onChange={handleChange} // Allow manual updates
+                onBlur={handleBlur}
                 sx={{ gridColumn: "span 1" }}
               />
             </Box>
@@ -92,7 +117,7 @@ const WearhouseHandle = () => {
             {/* 🔽 Submit Button */}
             <Box display="flex" justifyContent="end" mt="20px">
               <Button type="submit" color="secondary" variant="contained">
-                Add Item
+                Add to Warehouse
               </Button>
             </Box>
           </form>
@@ -103,22 +128,22 @@ const WearhouseHandle = () => {
 };
 
 // 📌 Validation Schema
-const checkoutSchema = yup.object().shape({
+const stockSchema = yup.object().shape({
   product_name: yup.string().required("Required"),
-  barcode: yup.number().required("Required"), // Hidden field, auto-filled
+  barcode: yup.string().required("Required"),
   location_name: yup.string().required("Required"),
   stock_quantity: yup
     .number()
-    .min(1, "Stock must be at least 1")
-    .required("Required"),
+    .required("Required")
+    .positive("Quantity must be greater than 0"),
 });
 
 // 📌 Initial Values
 const initialValues = {
   product_name: "",
-  barcode: 0,
+  barcode: "",
   location_name: "",
   stock_quantity: 0,
 };
 
-export default WearhouseHandle;
+export default WarehouseHandle;

@@ -48,7 +48,9 @@ exports.getProductById = async (req, res) => {
 
 exports.importProducts = async (req, res) => {
   try {
-    const products = req.body;
+    const { products, updateExisting } = req.body; // Receive updateExisting flag
+
+    console.log("📥 Received updateExisting flag:", updateExisting); // ✅ Debugging
 
     if (!Array.isArray(products) || products.length === 0) {
       return res
@@ -126,68 +128,75 @@ exports.importProducts = async (req, res) => {
       if (existingProduct.length > 0) {
         const existingData = existingProduct[0]; // Get existing values
 
-        // ✅ If product exists, update it (only change non-null fields)
-        await db.execute(
-          `UPDATE products 
-           SET item_name = ?, category_name = ?, hsn = ?, unit_name = ?, alert_quantity = ?, brand_name = ?, 
-               lot_number = ?, expire_date = ?, regular_price = ?, purchase_price = ?, tax_name = ?, tax_value = ?, tax_type = ?, 
-               sales_price = ?, opening_stock = ?, discount_type = ?, discount = ? 
-           WHERE sku = ? OR barcode = ?`,
-          [
-            item_name !== null && item_name !== ""
-              ? item_name
-              : existingData.item_name,
-            category_name !== null && category_name !== ""
-              ? category_name
-              : existingData.category_name,
-            hsn !== null && hsn !== "" ? hsn : existingData.hsn,
-            unit_name !== null && unit_name !== ""
-              ? unit_name
-              : existingData.unit_name,
-            alert_quantity !== null && alert_quantity !== ""
-              ? alert_quantity
-              : existingData.alert_quantity,
-            brand_name !== null && brand_name !== ""
-              ? brand_name
-              : existingData.brand_name,
-            lot_number !== null && lot_number !== ""
-              ? lot_number
-              : existingData.lot_number,
-            formattedExpireDate !== null && formattedExpireDate !== ""
-              ? formattedExpireDate
-              : existingData.expire_date,
-            regular_price !== null && regular_price !== ""
-              ? regular_price
-              : existingData.regular_price,
-            purchase_price !== null && purchase_price !== ""
-              ? purchase_price
-              : existingData.purchase_price,
-            tax_name !== null && tax_name !== ""
-              ? tax_name
-              : existingData.tax_name,
-            tax_value !== null && tax_value !== ""
-              ? tax_value
-              : existingData.tax_value,
-            tax_type !== null && tax_type !== ""
-              ? tax_type
-              : existingData.tax_type,
-            sales_price !== null && sales_price !== ""
-              ? sales_price
-              : existingData.sales_price,
-            opening_stock !== null && opening_stock !== ""
-              ? opening_stock
-              : existingData.opening_stock,
-            discount_type !== null && discount_type !== ""
-              ? discount_type
-              : existingData.discount_type,
-            discount !== null && discount !== ""
-              ? discount
-              : existingData.discount,
-            sku,
-            barcode,
-          ]
-        );
-        console.log(`✅ Updated existing product: ${item_name}`);
+        let newOpeningStock =
+          updateExisting || !opening_stock
+            ? opening_stock // Replace stock if checkbox is checked
+            : parseFloat(existingData.opening_stock) +
+              parseFloat(opening_stock); // Add stock if unchecked
+
+        if (updateExisting) {
+          // ✅ Completely replace the existing product
+          await db.execute(
+            `UPDATE products 
+             SET item_name = ?, category_name = ?, hsn = ?, unit_name = ?, alert_quantity = ?, brand_name = ?, 
+                 lot_number = ?, expire_date = ?, regular_price = ?, purchase_price = ?, tax_name = ?, tax_value = ?, tax_type = ?, 
+                 sales_price = ?, opening_stock = ?, discount_type = ?, discount = ? 
+             WHERE sku = ? OR barcode = ?`,
+            [
+              item_name,
+              category_name,
+              hsn,
+              unit_name,
+              alert_quantity,
+              brand_name,
+              lot_number,
+              formattedExpireDate,
+              regular_price,
+              purchase_price,
+              tax_name,
+              tax_value,
+              tax_type,
+              sales_price,
+              newOpeningStock, // Use the updated stock value
+              discount_type,
+              discount,
+              sku,
+              barcode,
+            ]
+          );
+          console.log(`✅ Replaced existing product: ${item_name}`);
+        } else {
+          // ✅ Only update non-empty fields & add stock quantity
+          await db.execute(
+            `UPDATE products 
+             SET item_name = ?, category_name = ?, hsn = ?, unit_name = ?, alert_quantity = ?, brand_name = ?, 
+                 lot_number = ?, expire_date = ?, regular_price = ?, purchase_price = ?, tax_name = ?, tax_value = ?, tax_type = ?, 
+                 sales_price = ?, opening_stock = ?, discount_type = ?, discount = ? 
+             WHERE sku = ? OR barcode = ?`,
+            [
+              item_name || existingData.item_name,
+              category_name || existingData.category_name,
+              hsn || existingData.hsn,
+              unit_name || existingData.unit_name,
+              alert_quantity || existingData.alert_quantity,
+              brand_name || existingData.brand_name,
+              lot_number || existingData.lot_number,
+              formattedExpireDate || existingData.expire_date,
+              regular_price || existingData.regular_price,
+              purchase_price || existingData.purchase_price,
+              tax_name || existingData.tax_name,
+              tax_value || existingData.tax_value,
+              tax_type || existingData.tax_type,
+              sales_price || existingData.sales_price,
+              newOpeningStock, // Updated stock quantity
+              discount_type || existingData.discount_type,
+              discount || existingData.discount,
+              sku,
+              barcode,
+            ]
+          );
+          console.log(`✅ Updated existing product: ${item_name}`);
+        }
       } else {
         // ✅ If product does not exist, insert a new record
         await db.execute(
@@ -402,5 +411,30 @@ exports.deleteProduct = async (req, res) => {
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+//Check Product by barcode
+exports.checkProductByBarcode = async (req, res) => {
+  const { barcode } = req.params;
+  if (!barcode) {
+    return res.status(400).json({ error: "Barcode is required" });
+  }
+
+  try {
+    // Query the database to find the product by barcode
+    const [result] = await db.query(
+      "SELECT * FROM products WHERE barcode = ?",
+      [barcode]
+    );
+
+    if (result.length > 0) {
+      res.json({ exists: true }); // Product found ✅
+    } else {
+      res.json({ exists: false }); // Product not found ❌
+    }
+  } catch (error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

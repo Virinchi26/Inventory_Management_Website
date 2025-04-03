@@ -1,4 +1,97 @@
 const db = require("../db");
+const multer = require("multer");
+const xlsx = require("xlsx");
+const path = require("path");
+
+// Setup Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Store files in "uploads" folder
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
+  },
+});
+
+const upload = multer({ storage }).single("file");
+
+// Upload and Process Excel File
+exports.uploadWarehouseProducts = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(500).json({ error: "File upload failed!" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded!" });
+    }
+
+    try {
+      const workbook = xlsx.readFile(req.file.path);
+      const sheetName = workbook.SheetNames[0];
+      const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+      const { location_name } = req.body; // Get selected location from dropdown
+      let notAddedProducts = [];
+
+      for (const row of sheetData) {
+        // ✅ Extract only necessary columns
+        const product_id = row["id"];
+        const product_name = row["item_name"];
+        const barcode = row["barcode"];
+
+        // ❌ Skip rows that don't have required data
+        if (!product_id || !product_name || !barcode) continue;
+
+        // ✅ Check if the product exists in the `products` table
+        const [existingProducts] = await db.query(
+          "SELECT * FROM products WHERE id = ? AND barcode = ?",
+          [product_id, barcode]
+        );
+
+        if (existingProducts.length > 0) {
+          // ✅ Check if the product is already in the warehouse at the given location
+          const [existingStock] = await db.query(
+            `SELECT * FROM warehouse WHERE product_id = ? AND location_name = ?`,
+            [product_id, location_name]
+          );
+
+          if (existingStock.length > 0) {
+            // 🔄 Update stock quantity if product already exists in warehouse
+            await db.query(
+              `UPDATE warehouse
+               SET stock_quantity = stock_quantity + 1 
+               WHERE product_id = ? AND location_name = ?`,
+              [product_id, location_name]
+            );
+          } else {
+            // ➕ Insert new entry if product is not in warehouse
+            await db.query(
+              `INSERT INTO warehouse (product_id, product_name, barcode, location_name, stock_quantity) 
+               VALUES (?, ?, ?, ?, 1)`,
+              [product_id, product_name, barcode, location_name]
+            );
+          }
+        } else {
+          notAddedProducts.push({ product_id, product_name, barcode }); // Track products not found
+        }
+      }
+
+      // ✅ Send response with products that were not added
+      if (notAddedProducts.length > 0) {
+        return res.json({
+          message: "Some products were not added.",
+          notAddedProducts,
+        });
+      } else {
+        return res.json({ message: "All products added successfully!" });
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+};
 
 // ✅ Get all warehouse stock with product details
 
@@ -6,7 +99,7 @@ exports.getWarehouseStock = async (req, res) => {
   try {
     // ✅ Fetch all warehouse stock details
     const [stockData] = await db.query(`
-      SELECT id,product_id, product_name,barcode, location_name, stock_quantity 
+      SELECT id,product_id, product_name,barcode, location_name, stock_quantity
       FROM warehouse
     `);
 
@@ -41,7 +134,7 @@ exports.addWarehouseStock = async (req, res) => {
 
     // ✅ Check if stock already exists in the same location with the same `sku`
     const [existingStock] = await db.query(
-      `SELECT id, stock_quantity FROM warehouse WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
+      `SELECT id FROM warehouse WHERE product_id = ? AND barcode = ? AND  LOWER(location_name) = LOWER(?)`,
       [product_id, barcode, location_name]
     );
 
@@ -55,7 +148,7 @@ exports.addWarehouseStock = async (req, res) => {
     } else {
       // ✅ Insert new stock entry
       await db.query(
-        `INSERT INTO warehouse (product_id, product_name, barcode, location_name, stock_quantity) VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO warehouse (product_id, product_name, barcode, location_name,stock_quantity) VALUES (?, ?, ?, ?, ?)`,
         [product_id, product_name, barcode, location_name, stock_quantity]
       );
       return res.json({ message: "✅ Stock added successfully!" });
@@ -68,7 +161,7 @@ exports.addWarehouseStock = async (req, res) => {
 
 // ✅ Transfer stock between locations
 exports.transferStock = async (req, res) => {
-  const { barcode, from_location, to_location, transfer_quantity } = req.body;
+  const { barcode, from_location, to_location } = req.body;
 
   try {
     // ✅ Convert location names to lowercase for consistency
@@ -88,20 +181,20 @@ exports.transferStock = async (req, res) => {
     const product_id = productData[0].id;
     const product_name = productData[0].item_name;
 
-    // ✅ Check if enough stock is available at `from_location`
-    const [sourceStock] = await db.query(
-      `SELECT stock_quantity FROM warehouse WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
-      [product_id, barcode, fromLocation]
-    );
+    // // ✅ Check if enough stock is available at `from_location`
+    // const [sourceStock] = await db.query(
+    //   `SELECT stock_quantity FROM warehouse WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
+    //   [product_id, barcode, fromLocation]
+    // );
 
-    if (
-      sourceStock.length === 0 ||
-      sourceStock[0].stock_quantity < transfer_quantity
-    ) {
-      return res
-        .status(400)
-        .json({ message: "❌ Not enough stock at source location!" });
-    }
+    // if (
+    //   sourceStock.length === 0 ||
+    //   sourceStock[0].stock_quantity < transfer_quantity
+    // ) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "❌ Not enough stock at source location!" });
+    // }
 
     // ✅ Reduce stock from `from_location`
     await db.query(
@@ -135,3 +228,5 @@ exports.transferStock = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+///////////////////////////////////////////////////////////////////

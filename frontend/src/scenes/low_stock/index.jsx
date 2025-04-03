@@ -108,11 +108,11 @@ const LowStock = () => {
       headerName: "Sales Price",
       flex: 2,
     },
-    // {
-    //   field: "opening_stock",
-    //   headerName: "Opening Stock",
-    //   flex: 2,
-    // },
+    {
+      field: "opening_stock",
+      headerName: "Stock Quantity", 
+      flex: 2,
+    },
     // {
     //   field: "barcode",
     //   headerName: "Barcode",

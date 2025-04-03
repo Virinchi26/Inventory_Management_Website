@@ -26,10 +26,12 @@ const ProductDropdown = ({
       options={products}
       getOptionLabel={(option) => `${option.item_name} (${option.barcode})`} // Show product with barcode
       filterOptions={(options, state) =>
-        options.filter((option) =>
-          option.item_name
-            .toLowerCase()
-            .includes(state.inputValue.toLowerCase())
+        options.filter(
+          (option) =>
+            option.item_name
+              .toLowerCase()
+              .includes(state.inputValue.toLowerCase()) ||
+            option.barcode.toString().includes(state.inputValue) // Search by barcode
         )
       }
       value={products.find((p) => p.item_name === values.product_name) || null}
@@ -46,7 +48,7 @@ const ProductDropdown = ({
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Search Product"
+          label="Search Product (Name or Barcode)"
           variant="filled"
           error={!!touched.product_name && !!errors.product_name}
           onBlur={handleBlur}

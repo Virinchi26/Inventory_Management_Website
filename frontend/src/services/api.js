@@ -81,14 +81,26 @@ export const deleteProduct = async (id) => {
 };
 
 // Function to send JSON data to backend
-export const importProducts = async (products) => {
+export const importProducts = async (products, updateExisting) => {
   try {
-    const response = await axios.post(`${API_URL}/import`, products, {
-      headers: { "Content-Type": "application/json" },
+    const response = await axios.post(`${API_URL}/import`, {
+      products,
+      updateExisting, // Send checkbox value
     });
-    return response.data; // Return success response
+    return response.data;
   } catch (error) {
     console.error("❌ Error uploading file:", error);
-    throw error; // Throw error to be handled in ImportButton.jsx
+    throw error;
+  }
+};
+
+export const checkProductExists = async (barcode) => {
+  try {
+    const response = await fetch(`${API_URL}/check-product/${barcode}`);
+    const data = await response.json();
+    return data.exists; // Returns true if product exists
+  } catch (error) {
+    console.error("Error checking product:", error);
+    return false;
   }
 };
