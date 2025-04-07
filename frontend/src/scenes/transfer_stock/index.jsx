@@ -39,26 +39,66 @@ const TransferStock = () => {
     setFieldValue("barcode", selectedProduct.barcode); // Auto-fill barcode
   };
 
-  const handleFormSubmit = async (values, { resetForm }) => {
-    try {
-      if (
-        values.from_location.trim().toLowerCase() ===
-        values.to_location.trim().toLowerCase()
-      ) {
-        alert("❌ Source and destination locations cannot be the same!");
-        return;
-      }
+const handleFormSubmit = async (values, { resetForm }) => {
+  try {
+    const fromLocation = values.from_location.trim().toLowerCase();
+    const toLocation = values.to_location.trim().toLowerCase();
 
-
-      const response = await transferStock(values);
-      alert(response.message);
-      resetForm();
-      setFromLocations([]); // Reset locations after submission
-    } catch (error) {
-      console.error("Error transferring stock:", error);
-      alert("❌ Failed to transfer stock!");
+    if (fromLocation === toLocation) {
+      alert("❌ Source and destination locations cannot be the same!");
+      return;
     }
-  };
+
+    // Find stock item at the source location
+    const stockItem = warehouseStock.find(
+      (item) =>
+        String(item.barcode).trim() === String(values.barcode).trim() &&
+        item.location_name.trim().toLowerCase() === fromLocation
+    );
+
+    if (!stockItem) {
+      console.log("DEBUG INFO:");
+      console.log("Submitted barcode:", values.barcode);
+      console.log("Submitted from_location:", values.from_location);
+      console.log("Available stock items:", warehouseStock);
+      alert("❌ No stock found at selected source location!");
+      return;
+    }
+
+    const availableQty = stockItem.stock_quantity;
+    const requestedQty = parseInt(values.transfer_quantity, 10);
+
+    if (requestedQty <= 0 || isNaN(requestedQty)) {
+      alert("❌ Transfer quantity must be a positive number.");
+      return;
+    }
+
+    let actualQtyToTransfer = requestedQty;
+
+    // If requested is more than available, adjust
+    if (requestedQty > availableQty) {
+      actualQtyToTransfer = availableQty;
+      alert(
+        `⚠️ Only ${availableQty} stocks are available, transferring ${availableQty}.`
+      );
+    }
+
+    const payload = {
+      ...values,
+      transfer_quantity: actualQtyToTransfer,
+    };
+
+    const response = await transferStock(payload);
+
+    alert(response.message || "✅ Stock transferred successfully.");
+    resetForm();
+    setFromLocations([]); // Clear filtered locations
+  } catch (error) {
+    console.error("Error transferring stock:", error);
+    alert("❌ Failed to transfer stock!");
+  }
+};
+
   const uniqueLocations = [
     ...new Set(
       warehouseStock.map((item) => item.location_name.trim().toLowerCase())
