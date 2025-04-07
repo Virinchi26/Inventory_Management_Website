@@ -161,72 +161,73 @@ exports.addWarehouseStock = async (req, res) => {
 
 // ✅ Transfer stock between locations
 exports.transferStock = async (req, res) => {
-  const { barcode, from_location, to_location } = req.body;
+  const { barcode, from_location, to_location, transfer_quantity } = req.body;
 
   try {
-    // ✅ Convert location names to lowercase for consistency
-    const fromLocation = from_location.trim().toLowerCase();
-    const toLocation = to_location.trim().toLowerCase();
-
-    // ✅ Get product details using `sku`
-    const [productData] = await db.query(
-      `SELECT id, item_name FROM products WHERE barcode = ?`,
-      [barcode]
+    // Step 1: Get the stock item from source location
+    const [sourceStockRows] = await db.query(
+      `SELECT * FROM warehouse WHERE barcode = ? AND location_name = ?`,
+      [barcode, from_location]
     );
 
-    if (productData.length === 0) {
-      return res.status(404).json({ message: "❌ Product not found!" });
+    if (sourceStockRows.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Source location does not have this product." });
     }
 
-    const product_id = productData[0].id;
-    const product_name = productData[0].item_name;
+    const sourceStock = sourceStockRows[0];
 
-    // // ✅ Check if enough stock is available at `from_location`
-    // const [sourceStock] = await db.query(
-    //   `SELECT stock_quantity FROM warehouse WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
-    //   [product_id, barcode, fromLocation]
-    // );
+    if (sourceStock.stock_quantity < transfer_quantity) {
+      return res
+        .status(400)
+        .json({ message: "Not enough stock in source location." });
+    }
 
-    // if (
-    //   sourceStock.length === 0 ||
-    //   sourceStock[0].stock_quantity < transfer_quantity
-    // ) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "❌ Not enough stock at source location!" });
-    // }
-
-    // ✅ Reduce stock from `from_location`
+    // Step 2: Reduce stock from source
     await db.query(
-      `UPDATE warehouse SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
-      [transfer_quantity, product_id, barcode, fromLocation]
+      `UPDATE warehouse SET stock_quantity = stock_quantity - ? WHERE id = ?`,
+      [transfer_quantity, sourceStock.id]
     );
 
-    // ✅ Check if stock already exists at `to_location`
-    const [destinationStock] = await db.query(
-      `SELECT stock_quantity FROM warehouse WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
-      [product_id, barcode, toLocation]
+    // Step 3: Check if product exists at destination
+    const [destStockRows] = await db.query(
+      `SELECT * FROM warehouse WHERE barcode = ? AND location_name = ?`,
+      [barcode, to_location]
     );
 
-    if (destinationStock.length > 0) {
-      // ✅ If stock exists, update the quantity
+    if (destStockRows.length > 0) {
+      // If exists, increment stock
       await db.query(
-        `UPDATE warehouse SET stock_quantity = stock_quantity + ? WHERE product_id = ? AND barcode = ? AND LOWER(location_name) = LOWER(?)`,
-        [transfer_quantity, product_id, barcode, toLocation]
+        `UPDATE warehouse SET stock_quantity = stock_quantity + ? WHERE id = ?`,
+        [transfer_quantity, destStockRows[0].id]
       );
     } else {
-      // ✅ If stock does not exist, insert a new record
+      // If not, insert new row
       await db.query(
-        `INSERT INTO warehouse (product_id, product_name, barcode, location_name, stock_quantity) VALUES (?, ?, ?, ?, ?)`,
-        [product_id, product_name, barcode, toLocation, transfer_quantity]
+        `INSERT INTO warehouse (product_id, product_name, barcode, location_name, stock_quantity)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          sourceStock.product_id,
+          sourceStock.product_name,
+          sourceStock.barcode,
+          to_location,
+          transfer_quantity,
+        ]
       );
     }
 
-    return res.json({ message: "✅ Stock transferred successfully!" });
+    res.json({ success: true, message: "✅ Stock transferred successfully!" });
   } catch (error) {
-    console.error("❌ Error transferring stock:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error transferring stock:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "❌ Server error during stock transfer.",
+      });
   }
 };
+
 
 ///////////////////////////////////////////////////////////////////

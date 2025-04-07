@@ -32,7 +32,7 @@ const TransferStock = () => {
         (item) =>
           item.barcode === selectedProduct.barcode && item.stock_quantity > 0
       )
-      .map((item) => item.location_name.trim().toLowerCase());
+      .map((item) => item.location_name.trim());
 
     setFromLocations(availableLocations);
     setFieldValue("from_location", ""); // Reset selected location
@@ -41,10 +41,14 @@ const TransferStock = () => {
 
   const handleFormSubmit = async (values, { resetForm }) => {
     try {
-      if (values.from_location === values.to_location) {
+      if (
+        values.from_location.trim().toLowerCase() ===
+        values.to_location.trim().toLowerCase()
+      ) {
         alert("❌ Source and destination locations cannot be the same!");
         return;
       }
+
 
       const response = await transferStock(values);
       alert(response.message);
@@ -55,6 +59,13 @@ const TransferStock = () => {
       alert("❌ Failed to transfer stock!");
     }
   };
+  const uniqueLocations = [
+    ...new Set(
+      warehouseStock.map((item) => item.location_name.trim().toLowerCase())
+    ),
+  ];
+
+
 
   return (
     <Box m="20px">
@@ -144,11 +155,15 @@ const TransferStock = () => {
                     onBlur={handleBlur}
                     error={!!touched.to_location && !!errors.to_location}
                   >
-                    {warehouseStock.map((item, index) => (
-                      <MenuItem key={index} value={item.location_name}>
-                        {item.location_name}
-                      </MenuItem>
-                    ))}
+                    {uniqueLocations.map((loc, index) => {
+                      const displayValue =
+                        loc.charAt(0).toUpperCase() + loc.slice(1);
+                      return (
+                        <MenuItem key={index} value={loc}>
+                          {displayValue}
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
               </Grid>
