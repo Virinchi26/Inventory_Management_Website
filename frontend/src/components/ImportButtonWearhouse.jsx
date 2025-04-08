@@ -65,6 +65,7 @@ const ImportButtonWearhouse = () => {
       }
     } catch (error) {
       setLoading(false);
+      console.log(error);
       alert("❌ Failed to import products!");
     }
   };
