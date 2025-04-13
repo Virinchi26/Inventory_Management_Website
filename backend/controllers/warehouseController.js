@@ -35,25 +35,26 @@ exports.uploadWarehouseProducts = (req, res) => {
       let notAddedProducts = [];
 
       for (const row of sheetData) {
-        // ✅ Extract only necessary columns
-        const product_id = row["id"];
+        // ✅ Extract necessary columns
         const product_name = row["item_name"];
         const barcode = row["barcode"];
 
-        // ❌ Skip rows that don't have required data
-        if (!product_id || !product_name || !barcode) continue;
+        // ❌ Skip rows missing required data
+        if (!product_name || !barcode) continue;
 
-        // ✅ Check if the product exists in the `products` table
+        // ✅ Check if the product exists in the `products` table using barcode
         const [existingProducts] = await db.query(
-          "SELECT * FROM products WHERE id = ? AND barcode = ?",
-          [product_id, barcode]
+          "SELECT id, item_name FROM products WHERE barcode = ?",
+          [barcode]
         );
 
         if (existingProducts.length > 0) {
+          const product_id = existingProducts[0].id; // ✅ Get `product_id` from products table
+
           // ✅ Check if the product is already in the warehouse at the given location
           const [existingStock] = await db.query(
-            `SELECT * FROM warehouse WHERE product_id = ? AND location_name = ?`,
-            [product_id, location_name]
+            `SELECT * FROM warehouse WHERE barcode = ? AND location_name = ?`,
+            [barcode, location_name]
           );
 
           if (existingStock.length > 0) {
@@ -61,11 +62,11 @@ exports.uploadWarehouseProducts = (req, res) => {
             await db.query(
               `UPDATE warehouse
                SET stock_quantity = stock_quantity + 1 
-               WHERE product_id = ? AND location_name = ?`,
-              [product_id, location_name]
+               WHERE barcode = ? AND location_name = ?`,
+              [barcode, location_name]
             );
           } else {
-            // ➕ Insert new entry if product is not in warehouse
+            // ➕ Insert new entry with `product_id`
             await db.query(
               `INSERT INTO warehouse (product_id, product_name, barcode, location_name, stock_quantity) 
                VALUES (?, ?, ?, ?, 1)`,
@@ -73,21 +74,22 @@ exports.uploadWarehouseProducts = (req, res) => {
             );
           }
         } else {
-          notAddedProducts.push({ product_id, product_name, barcode }); // Track products not found
+          notAddedProducts.push({ product_name, barcode }); // Track products not found
         }
       }
 
       // ✅ Send response with products that were not added
       if (notAddedProducts.length > 0) {
         return res.json({
-          message: "Some products were not added.",
+          message:
+            "Some products were not added (not found in products table).",
           notAddedProducts,
         });
       } else {
         return res.json({ message: "All products added successfully!" });
       }
     } catch (error) {
-      console.error("Error processing file:", error);
+      console.error("❌ Error processing file:", error);
       return res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -219,13 +221,8 @@ exports.transferStock = async (req, res) => {
 
     res.json({ success: true, message: "✅ Stock transferred successfully!" });
   } catch (error) {
-    console.error("Error transferring stock:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "❌ Server error during stock transfer.",
-      });
+    console.error("❌ Error transferring stock:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
