@@ -10,6 +10,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { Formik } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -44,11 +45,12 @@ const TransferStock = () => {
     loadWarehouseData();
   }, []);
 
-  const handleProductSelection = (selectedProduct, setFieldValue) => {
-    if (!selectedProduct) return;
-    setFieldValue("barcode", selectedProduct.barcode);
-    setFieldValue("product_name", selectedProduct.product_name);
-  };
+ const handleProductSelection = (selectedProduct, setFieldValue) => {
+   if (!selectedProduct) return;
+   setFieldValue("barcode", selectedProduct.barcode);
+   setFieldValue("product_name", selectedProduct.product_name);
+   // ⚠️ Do NOT touch from/to locations here!
+ };
 
   const addOrUpdateProduct = (values, resetForm) => {
     const newProduct = { ...values };
@@ -142,6 +144,7 @@ const TransferStock = () => {
       <Header title="Transfer Stock" subtitle="Move stock between locations" />
 
       <Formik
+        enableReinitialize
         onSubmit={(values, helpers) =>
           addOrUpdateProduct(values, helpers.resetForm)
         }
@@ -197,7 +200,6 @@ const TransferStock = () => {
                   errors={errors}
                 />
               </Grid>
-
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -209,52 +211,67 @@ const TransferStock = () => {
                   InputProps={{ readOnly: true }}
                 />
               </Grid>
+              <Grid container spacing={2} ml={0} mt={1}>
+                <Grid item xs={12} sm={5}>
+                  <FormControl fullWidth variant="filled">
+                    <InputLabel>From Location</InputLabel>
+                    <Select
+                      name="from_location"
+                      value={values.from_location}
+                      onChange={(e) => {
+                        setFieldValue("from_location", e.target.value);
+                        setSelectedFromLocation(e.target.value);
+                      }}
+                      onBlur={handleBlur}
+                      error={!!touched.from_location && !!errors.from_location}
+                      disabled={!!selectedFromLocation}
+                    >
+                      {fromLocations.map((loc, index) => (
+                        <MenuItem key={index} value={loc}>
+                          {loc}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth variant="filled">
-                  <InputLabel>From Location</InputLabel>
-                  <Select
-                    name="from_location"
-                    value={values.from_location}
-                    onChange={(e) => {
-                      setFieldValue("from_location", e.target.value);
-                      setSelectedFromLocation(e.target.value);
+                <Grid item xs={12} sm={5}>
+                  <FormControl fullWidth variant="filled">
+                    <InputLabel>To Location</InputLabel>
+                    <Select
+                      name="to_location"
+                      value={values.to_location}
+                      onChange={(e) => {
+                        setFieldValue("to_location", e.target.value);
+                        setSelectedToLocation(e.target.value);
+                      }}
+                      onBlur={handleBlur}
+                      error={!!touched.to_location && !!errors.to_location}
+                      disabled={!!selectedToLocation}
+                    >
+                      {uniqueLocations.map((loc, index) => (
+                        <MenuItem key={index} value={loc}>
+                          {loc.charAt(0).toUpperCase() +
+                            loc.slice(1).toLowerCase()}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={2}>
+                  <IconButton
+                    color="secondary"
+                    onClick={() => {
+                      setProductList([]);
+                      setSelectedFromLocation("");
+                      setSelectedToLocation("");
                     }}
-                    onBlur={handleBlur}
-                    error={!!touched.from_location && !!errors.from_location}
                   >
-                    {fromLocations.map((loc, index) => (
-                      <MenuItem key={index} value={loc}>
-                        {loc}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                    <RestartAltIcon />
+                  </IconButton>
+                </Grid>
               </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth variant="filled">
-                  <InputLabel>To Location</InputLabel>
-                  <Select
-                    name="to_location"
-                    value={values.to_location}
-                    onChange={(e) => {
-                      setFieldValue("to_location", e.target.value);
-                      setSelectedToLocation(e.target.value);
-                    }}
-                    onBlur={handleBlur}
-                    error={!!touched.to_location && !!errors.to_location}
-                  >
-                    {uniqueLocations.map((loc, index) => (
-                      <MenuItem key={index} value={loc}>
-                        {loc.charAt(0).toUpperCase() +
-                          loc.slice(1).toLowerCase()}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
