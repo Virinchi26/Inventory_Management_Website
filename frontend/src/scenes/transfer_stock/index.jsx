@@ -9,8 +9,14 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { Formik } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -18,19 +24,20 @@ import Header from "../../components/Header";
 import ProductDropdown from "../../components/ProductDropdown";
 import { getWarehouseStock, transferStock } from "../../services/wearhouse_api";
 import { useEffect, useState } from "react";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 const TransferStock = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [warehouseStock, setWarehouseStock] = useState([]);
   const [fromLocations, setFromLocations] = useState([]);
   const [productList, setProductList] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
 
-  // New: Track selected from/to locations
   const [selectedFromLocation, setSelectedFromLocation] = useState("");
   const [selectedToLocation, setSelectedToLocation] = useState("");
+
+  // Dialog state
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedProductIndex, setSelectedProductIndex] = useState(null);
+  const [editedQuantity, setEditedQuantity] = useState(1);
 
   useEffect(() => {
     const loadWarehouseData = async () => {
@@ -45,15 +52,16 @@ const TransferStock = () => {
     loadWarehouseData();
   }, []);
 
- const handleProductSelection = (selectedProduct, setFieldValue) => {
-   if (!selectedProduct) return;
-   setFieldValue("barcode", selectedProduct.barcode);
-   setFieldValue("product_name", selectedProduct.product_name);
-   // ⚠️ Do NOT touch from/to locations here!
- };
+  const handleProductSelection = (selectedProduct) => {
+    if (!selectedProduct) return;
 
-  const addOrUpdateProduct = (values, resetForm) => {
-    const newProduct = { ...values };
+    const newProduct = {
+      product_name: selectedProduct.product_name,
+      barcode: selectedProduct.barcode,
+      from_location: selectedFromLocation,
+      to_location: selectedToLocation,
+      transfer_quantity: 1,
+    };
 
     if (
       newProduct.from_location.trim().toLowerCase() ===
@@ -63,23 +71,12 @@ const TransferStock = () => {
       return;
     }
 
-    if (editIndex !== null) {
-      const updatedList = [...productList];
-      updatedList[editIndex] = newProduct;
-      setProductList(updatedList);
-      setEditIndex(null);
-    } else {
-      setProductList([...productList, newProduct]);
+    const alreadyExists = productList.find(
+      (p) => p.barcode === newProduct.barcode
+    );
+    if (!alreadyExists) {
+      setProductList((prev) => [...prev, newProduct]);
     }
-
-    resetForm();
-  };
-
-  const handleEdit = (index) => {
-    const product = productList[index];
-    setEditIndex(index);
-    setSelectedFromLocation(product.from_location);
-    setSelectedToLocation(product.to_location);
   };
 
   const handleDelete = (index) => {
@@ -133,6 +130,19 @@ const TransferStock = () => {
     setSelectedToLocation("");
   };
 
+  const handleEditClick = (index) => {
+    setSelectedProductIndex(index);
+    setEditedQuantity(productList[index].transfer_quantity);
+    setOpenDialog(true);
+  };
+
+  const handleSaveQuantity = () => {
+    const updatedList = [...productList];
+    updatedList[selectedProductIndex].transfer_quantity = editedQuantity;
+    setProductList(updatedList);
+    setOpenDialog(false);
+  };
+
   const uniqueLocations = [
     ...new Set(
       warehouseStock.map((item) => item.location_name.trim().toLowerCase())
@@ -145,15 +155,11 @@ const TransferStock = () => {
 
       <Formik
         enableReinitialize
-        onSubmit={(values, helpers) =>
-          addOrUpdateProduct(values, helpers.resetForm)
-        }
         initialValues={{
           product_name: "",
           barcode: "",
-          from_location: selectedFromLocation,
-          to_location: selectedToLocation,
-          transfer_quantity: "",
+          from_location: selectedFromLocation || "",
+          to_location: selectedToLocation || "",
         }}
         validationSchema={yup.object().shape({
           product_name: yup.string().required("Product name is required"),
@@ -166,33 +172,85 @@ const TransferStock = () => {
               [yup.ref("from_location")],
               "From and To locations must be different"
             ),
-          transfer_quantity: yup
-            .number()
-            .required("Quantity is required")
-            .positive("Quantity must be greater than zero"),
         })}
+        onSubmit={() => {}}
       >
-        {({
-          values,
-          errors,
-          touched,
-          handleBlur,
-          handleChange,
-          handleSubmit,
-          setFieldValue,
-        }) => (
-          <form onSubmit={handleSubmit}>
+        {({ values, handleBlur, setFieldValue, touched, errors }) => (
+          <form>
             <Grid container spacing={2}>
+              <Grid item xs={12} sm={5}>
+                <FormControl fullWidth variant="filled">
+                  <InputLabel>From Location</InputLabel>
+                  <Select
+                    name="from_location"
+                    value={values.from_location}
+                    onChange={(e) => {
+                      setFieldValue("from_location", e.target.value);
+                      setSelectedFromLocation(e.target.value);
+                    }}
+                    onBlur={handleBlur}
+                    error={!!touched.from_location && !!errors.from_location}
+                    disabled={!!selectedFromLocation}
+                  >
+                    {fromLocations.map((loc, index) => (
+                      <MenuItem key={index} value={loc}>
+                        {loc}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={5}>
+                <FormControl fullWidth variant="filled">
+                  <InputLabel>To Location</InputLabel>
+                  <Select
+                    name="to_location"
+                    value={values.to_location}
+                    onChange={(e) => {
+                      setFieldValue("to_location", e.target.value);
+                      setSelectedToLocation(e.target.value);
+                    }}
+                    onBlur={handleBlur}
+                    error={!!touched.to_location && !!errors.to_location}
+                    disabled={!!selectedToLocation}
+                  >
+                    {uniqueLocations.map((loc, index) => (
+                      <MenuItem key={index} value={loc}>
+                        {loc.charAt(0).toUpperCase() + loc.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={2}>
+                <IconButton
+                  color="secondary"
+                  onClick={() => {
+                    setProductList([]);
+                    setSelectedFromLocation("");
+                    setSelectedToLocation("");
+                  }}
+                >
+                  <RestartAltIcon />
+                </IconButton>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <ProductDropdown
                   values={values}
+                  disabled={!selectedFromLocation || !selectedToLocation}
                   setFieldValue={(field, value) => {
                     setFieldValue(field, value);
                     if (field === "product_name") {
                       const selectedProduct = warehouseStock.find(
                         (item) => item.product_name === value
                       );
-                      handleProductSelection(selectedProduct, setFieldValue);
+                      if (selectedProduct) {
+                        setFieldValue("barcode", selectedProduct.barcode);
+                        handleProductSelection(selectedProduct);
+                      }
                     }
                   }}
                   handleBlur={handleBlur}
@@ -200,6 +258,7 @@ const TransferStock = () => {
                   errors={errors}
                 />
               </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -211,102 +270,7 @@ const TransferStock = () => {
                   InputProps={{ readOnly: true }}
                 />
               </Grid>
-              <Grid container spacing={2} ml={0} mt={1}>
-                <Grid item xs={12} sm={5}>
-                  <FormControl fullWidth variant="filled">
-                    <InputLabel>From Location</InputLabel>
-                    <Select
-                      name="from_location"
-                      value={values.from_location}
-                      onChange={(e) => {
-                        setFieldValue("from_location", e.target.value);
-                        setSelectedFromLocation(e.target.value);
-                      }}
-                      onBlur={handleBlur}
-                      error={!!touched.from_location && !!errors.from_location}
-                      disabled={!!selectedFromLocation}
-                    >
-                      {fromLocations.map((loc, index) => (
-                        <MenuItem key={index} value={loc}>
-                          {loc}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={5}>
-                  <FormControl fullWidth variant="filled">
-                    <InputLabel>To Location</InputLabel>
-                    <Select
-                      name="to_location"
-                      value={values.to_location}
-                      onChange={(e) => {
-                        setFieldValue("to_location", e.target.value);
-                        setSelectedToLocation(e.target.value);
-                      }}
-                      onBlur={handleBlur}
-                      error={!!touched.to_location && !!errors.to_location}
-                      disabled={!!selectedToLocation}
-                    >
-                      {uniqueLocations.map((loc, index) => (
-                        <MenuItem key={index} value={loc}>
-                          {loc.charAt(0).toUpperCase() +
-                            loc.slice(1).toLowerCase()}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={2}>
-                  <IconButton
-                    color="secondary"
-                    onClick={() => {
-                      setProductList([]);
-                      setSelectedFromLocation("");
-                      setSelectedToLocation("");
-                    }}
-                  >
-                    <RestartAltIcon />
-                  </IconButton>
-                </Grid>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  variant="filled"
-                  type="number"
-                  label="Transfer Quantity"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.transfer_quantity}
-                  name="transfer_quantity"
-                  error={
-                    !!touched.transfer_quantity && !!errors.transfer_quantity
-                  }
-                  helperText={
-                    touched.transfer_quantity && errors.transfer_quantity
-                  }
-                />
-              </Grid>
             </Grid>
-
-            <Box display="flex" justifyContent="space-between" mt="20px">
-              <Button type="submit" color="secondary" variant="contained">
-                {editIndex !== null ? "Update Product" : "Add Product"}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setProductList([]);
-                  setSelectedFromLocation("");
-                  setSelectedToLocation("");
-                }}
-              >
-                Reset
-              </Button>
-            </Box>
           </form>
         )}
       </Formik>
@@ -331,18 +295,23 @@ const TransferStock = () => {
                 <Box>
                   <Typography>{prod.product_name}</Typography>
                   <Typography variant="body2">
-                    From: {prod.from_location} → To: {prod.to_location} | Qty:{" "}
-                    {prod.transfer_quantity}
+                    From: {prod.from_location} → To: {prod.to_location}
                   </Typography>
+                  <Box display="flex" alignItems="center" mt={1}>
+                    <Typography variant="body2">
+                      Qty: {prod.transfer_quantity}
+                    </Typography>
+                    <IconButton
+                      onClick={() => handleEditClick(idx)}
+                      size="small"
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Box>
-                <Box>
-                  <IconButton onClick={() => handleEdit(idx)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(idx)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
+                <IconButton onClick={() => handleDelete(idx)}>
+                  <DeleteIcon />
+                </IconButton>
               </Box>
             ))}
             <Button
@@ -355,6 +324,41 @@ const TransferStock = () => {
           </>
         )}
       </Box>
+
+      {/* Quantity Edit Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Edit Transfer Quantity</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Quantity"
+            type="number"
+            fullWidth
+            variant="standard"
+            value={editedQuantity}
+            onChange={(e) => setEditedQuantity(Number(e.target.value))}
+            inputProps={{ min: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            color="secondary"
+            variant="contained"
+            onClick={() => setOpenDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveQuantity}
+            color="secondary"
+            autoFocus
+            variant="contained"
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
