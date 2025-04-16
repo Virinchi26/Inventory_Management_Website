@@ -71,10 +71,22 @@ const TransferStock = () => {
       return;
     }
 
-    const alreadyExists = productList.find(
-      (p) => p.barcode === newProduct.barcode
+    const existingProductIndex = productList.findIndex(
+      (p) =>
+        p.barcode === newProduct.barcode &&
+        p.from_location.trim().toLowerCase() ===
+          newProduct.from_location.trim().toLowerCase() &&
+        p.to_location.trim().toLowerCase() ===
+          newProduct.to_location.trim().toLowerCase()
     );
-    if (!alreadyExists) {
+
+    if (existingProductIndex !== -1) {
+      // Increase the quantity if it already exists
+      const updatedList = [...productList];
+      updatedList[existingProductIndex].transfer_quantity += 1;
+      setProductList(updatedList);
+    } else {
+      // Add new product to the list
       setProductList((prev) => [...prev, newProduct]);
     }
   };
@@ -250,9 +262,15 @@ const TransferStock = () => {
                       if (selectedProduct) {
                         setFieldValue("barcode", selectedProduct.barcode);
                         handleProductSelection(selectedProduct);
+                        setTimeout(() => {
+                          setFieldValue("product_name", "");
+                          setFieldValue("barcode", "");
+                        },300  //add timing here if you want to i.e. 300
+                        );
                       }
                     }
                   }}
+                  
                   handleBlur={handleBlur}
                   touched={touched}
                   errors={errors}
