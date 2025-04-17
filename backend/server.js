@@ -5,6 +5,7 @@ const cors = require("cors");
 const productRoutes = require("./routes/productRoutes");
 const warehouseRoutes = require("./routes/warehouseRoutes");
 const locationRoutes = require("./routes/locationRoutes");
+const stockAudit = require("./routes/stockAuditRoutes"); // Import stock audit route
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/products", productRoutes);
 app.use("/api/warehouse", warehouseRoutes);
 app.use("/api/locations", locationRoutes);
+app.use("/api/stock", stockAudit); // Add stock audit route
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
