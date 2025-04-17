@@ -17,6 +17,7 @@ import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import IosShareIcon from "@mui/icons-material/IosShare";
+import PageviewIcon from "@mui/icons-material/Pageview";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -127,6 +128,13 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
 
+            <Item
+              title="Stock Audit"
+              to="/stock-audit"
+              icon={<PageviewIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
             <Typography
               variant="h6"
               color={colors.grey[300]}

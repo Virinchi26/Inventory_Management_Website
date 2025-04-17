@@ -20,6 +20,7 @@ import WearhouseHandle from "./scenes/wearhouse";
 import WarehouseStock from "./scenes/wearhouse_stock";
 import TransferStock from "./scenes/transfer_stock";
 import AddLocation from "./scenes/add_locations";
+import StockAuditForm from "./scenes/stock_audit";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -51,12 +52,11 @@ function App() {
                 path="/add-product-location"
                 element={<WearhouseHandle />}
               />
-              <Route
-                path="/add-locations"
-                element={<AddLocation />}
-              />
+              <Route path="/add-locations" element={<AddLocation />} />
               <Route path="/warehouse-stock" element={<WarehouseStock />} />
               <Route path="/transfer-stock" element={<TransferStock />} />
+
+              <Route path="/stock-audit" element={<StockAuditForm />} />
             </Routes>
           </main>
         </div>
