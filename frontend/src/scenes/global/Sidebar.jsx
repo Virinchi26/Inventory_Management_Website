@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
+
+// Icons
 import AddIcon from "@mui/icons-material/Add";
 import AddLocationIcon from "@mui/icons-material/AddLocation";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
@@ -22,12 +24,11 @@ import PageviewIcon from "@mui/icons-material/Pageview";
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
   return (
     <MenuItem
       active={selected === title}
-      style={{
-        color: colors.grey[100],
-      }}
+      style={{ color: colors.grey[100] }}
       onClick={() => setSelected(title)}
       icon={icon}
     >
@@ -40,8 +41,37 @@ const Item = ({ title, to, icon, selected, setSelected }) => {
 const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const location = useLocation();
+
+  // Map route pathnames to sidebar item titles
+  const pathToTitleMap = {
+    "/": "Dashboard",
+    "/stock-audit": "Stock Audit",
+    "/warehouse-stock": "Wearhouse Stock",
+    "/add-product-location": "Add Product Location",
+    "/add-locations": "Add Locations",
+    "/transfer-stock": "Transfer Stock",
+    "/low-stock": "Low Stock",
+    "/products": "Product List",
+    "/form": "Add Product",
+    "/invoices": "Invoices Balances",
+    "/faq": "FAQ Page",
+    "/bar": "Bar Chart",
+    "/pie": "Pie Chart",
+    "/line": "Line Chart",
+    "/geography": "Geography Chart",
+  };
+
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selected, setSelected] = useState("Dashboard");
+  const [selected, setSelected] = useState(
+    pathToTitleMap[location.pathname] || "Dashboard"
+  );
+
+  // Update selected menu on route change
+  useEffect(() => {
+    const currentTitle = pathToTitleMap[location.pathname];
+    if (currentTitle) setSelected(currentTitle);
+  }, [location.pathname]);
 
   return (
     <Box
@@ -66,7 +96,6 @@ const Sidebar = () => {
     >
       <ProSidebar collapsed={isCollapsed}>
         <Menu iconShape="square">
-          {/* LOGO AND MENU ICON */}
           <MenuItem
             onClick={() => setIsCollapsed(!isCollapsed)}
             icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
@@ -127,7 +156,6 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-
             <Item
               title="Stock Audit"
               to="/stock-audit"
@@ -135,6 +163,7 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
+
             <Typography
               variant="h6"
               color={colors.grey[300]}
@@ -142,7 +171,6 @@ const Sidebar = () => {
             >
               Wearhouse
             </Typography>
-
             <Item
               title="Wearhouse Stock"
               to="/warehouse-stock"
@@ -150,7 +178,6 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-
             <Item
               title="Add Product Location"
               to="/add-product-location"
@@ -158,7 +185,6 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-
             <Item
               title="Add Locations"
               to="/add-locations"
@@ -181,7 +207,6 @@ const Sidebar = () => {
             >
               Data
             </Typography>
-
             <Item
               title="Low Stock"
               to="/low-stock"

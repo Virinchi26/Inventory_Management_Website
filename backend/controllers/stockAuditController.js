@@ -58,6 +58,7 @@ exports.performStockAudit = async (req, res) => {
     }
 
     return res.json({
+      success: true,
       message: "Stock audit completed.",
       product_name,
       barcode,
