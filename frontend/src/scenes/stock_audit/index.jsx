@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -29,14 +29,12 @@ const StockAuditForm = () => {
     product_name: "",
     barcode: "",
     location_name: "",
-    audited_by: "",
   };
 
   const stockSchema = yup.object().shape({
     product_name: yup.string().required("Required"),
     barcode: yup.string().required("Required"),
     location_name: yup.string().required("Required"),
-    audited_by: yup.string().required("Required"),
   });
 
   const addOrUpdateAuditItem = (values, setFieldValue) => {
@@ -56,7 +54,6 @@ const StockAuditForm = () => {
         barcode: values.barcode,
         location_name: values.location_name,
         physical_stock: 1,
-        audited_by: values.audited_by,
       };
       setAuditList((prev) => [...prev, newItem]);
     }
@@ -77,9 +74,17 @@ const StockAuditForm = () => {
     for (const item of auditList) {
       try {
         const res = await submitStockAudit(item);
+
         if (res.success) {
-          results.push({ ...res, audited_by: item.audited_by });
           alert(`✅ Successfully audited ${item.product_name}`);
+          results.push({
+            location_name: item.location_name,
+            product_name: item.product_name,
+            barcode: item.barcode,
+            previous_stock: res.previous_stock,
+            updated_stock: res.updated_stock,
+            difference: res.updated_stock - res.previous_stock,
+          });
         } else {
           alert(`❌ Error auditing ${item.product_name}: ${res.message}`);
         }
@@ -88,7 +93,7 @@ const StockAuditForm = () => {
       }
     }
 
-    setAuditResponses(results);
+    setAuditResponses(results); // Now this will contain the data to display
     setAuditList([]);
     setLocationLocked(false);
     setLocationName("");
@@ -130,15 +135,30 @@ const StockAuditForm = () => {
           handleChange,
           setFieldValue,
         }) => {
-          const autoAddCondition =
-            values.product_name &&
-            values.barcode &&
-            values.location_name &&
-            values.audited_by;
+          const formValuesRef = useRef({});
 
-          if (autoAddCondition) {
-            addOrUpdateAuditItem(values, setFieldValue);
-          }
+          useEffect(() => {
+            const { product_name, barcode, location_name } = values;
+            const prev = formValuesRef.current;
+
+            const allFieldsFilled = product_name && barcode && location_name;
+
+            const hasChanged =
+              product_name !== prev.product_name ||
+              barcode !== prev.barcode ||
+              location_name !== prev.location_name;
+
+           if (
+             allFieldsFilled &&
+             (!formValuesRef.current.timestamp ||
+               Date.now() - formValuesRef.current.timestamp > 300)
+           ) {
+             addOrUpdateAuditItem(values, setFieldValue);
+             formValuesRef.current = { ...values, timestamp: Date.now() };
+           }
+
+          }, [values, setFieldValue]);
+
 
           return (
             <form>
@@ -199,20 +219,23 @@ const StockAuditForm = () => {
                     errors={errors}
                   />
                 )}
-
-                {/* Audited By */}
-                <TextField
-                  fullWidth
-                  variant="filled"
-                  type="text"
-                  label="Audited By"
-                  value={values.audited_by}
-                  name="audited_by"
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  sx={{ gridColumn: "span 1" }}
-                />
               </Box>
+
+              {/* Button to Add or Update Audit Item */}
+              {/* <Box mt={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={
+                    !values.product_name ||
+                    !values.barcode ||
+                    !values.location_name 
+                  }
+                  onClick={() => addOrUpdateAuditItem(values, setFieldValue)}
+                >
+                  Add/Update Audit Item
+                </Button>
+              </Box> */}
             </form>
           );
         }}
@@ -229,7 +252,6 @@ const StockAuditForm = () => {
                 <th>Barcode</th>
                 <th>Location</th>
                 <th>Physical Qty</th>
-                <th>Audited By</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -251,7 +273,6 @@ const StockAuditForm = () => {
                       item.physical_stock
                     )}
                   </td>
-                  <td>{item.audited_by}</td>
                   <td>
                     {editingIndex === idx ? (
                       <IconButton onClick={() => handleSaveEdit(idx)}>
@@ -296,7 +317,6 @@ const StockAuditForm = () => {
                 <th>Location</th>
                 <th>Product</th>
                 <th>Barcode</th>
-                <th>Audited By</th>
                 <th>Previous Stock</th>
                 <th>Updated Stock</th>
                 <th>Difference</th>
@@ -308,7 +328,6 @@ const StockAuditForm = () => {
                   <td>{res.location_name}</td>
                   <td>{res.product_name}</td>
                   <td>{res.barcode}</td>
-                  <td>{res.audited_by}</td>
                   <td>{res.previous_stock}</td>
                   <td>{res.updated_stock}</td>
                   <td>{res.difference}</td>

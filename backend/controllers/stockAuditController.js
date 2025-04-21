@@ -1,7 +1,7 @@
 const db = require("../db");
 
 exports.performStockAudit = async (req, res) => {
-  const { barcode, physical_stock, location_name, audited_by } = req.body;
+  const { barcode, physical_stock, location_name } = req.body;
 
   try {
     // 1. Fetch product_name using the barcode from products
@@ -36,8 +36,8 @@ exports.performStockAudit = async (req, res) => {
     // 3. Insert audit record into stock_audit
     await db.query(
       `INSERT INTO stock_audit 
-          (barcode, product_name, location_name, system_stock, physical_stock, difference, audited_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          (barcode, product_name, location_name, system_stock, physical_stock, difference )
+         VALUES (?, ?, ?, ?, ?, ?)`,
       [
         barcode,
         product_name,
@@ -45,7 +45,7 @@ exports.performStockAudit = async (req, res) => {
         system_stock,
         physical_stock,
         difference,
-        audited_by,
+        ,
       ]
     );
 
