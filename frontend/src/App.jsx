@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
@@ -21,20 +21,33 @@ import WarehouseStock from "./scenes/wearhouse_stock";
 import TransferStock from "./scenes/transfer_stock";
 import AddLocation from "./scenes/add_locations";
 import StockAuditForm from "./scenes/stock_audit";
+import LoginPage from "./scenes/auth/login";
+import SignUpPage from "./scenes/auth/register";
 
 function App() {
   const [theme, colorMode] = useMode();
   const [isSidebar, setIsSidebar] = useState(true);
+  const location = useLocation();
+
+  const isAuthPage =
+    location.pathname === "/login" || location.pathname === "/register";
 
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <div className="app">
-          <Sidebar isSidebar={isSidebar} />
+          {/* Hide sidebar on login page */}
+          {!isAuthPage && <Sidebar isSidebar={isSidebar} />}
+
           <main className="content">
-            <Topbar setIsSidebar={setIsSidebar} />
+            {/* Hide topbar on login page */}
+            {!isAuthPage && <Topbar setIsSidebar={setIsSidebar} />}
+
             <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<SignUpPage />} />
+
               <Route path="/" element={<Dashboard />} />
               <Route path="/team" element={<Team />} />
               <Route path="/products" element={<Products />} />
@@ -47,7 +60,6 @@ function App() {
               <Route path="/pie" element={<Pie />} />
               <Route path="/line" element={<Line />} />
               <Route path="/geography" element={<Geography />} />
-
               <Route
                 path="/add-product-location"
                 element={<WearhouseHandle />}
@@ -55,7 +67,6 @@ function App() {
               <Route path="/add-locations" element={<AddLocation />} />
               <Route path="/warehouse-stock" element={<WarehouseStock />} />
               <Route path="/transfer-stock" element={<TransferStock />} />
-
               <Route path="/stock-audit" element={<StockAuditForm />} />
             </Routes>
           </main>
