@@ -11,6 +11,7 @@ import {
 import { Formik } from "formik";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
+import { register } from "../../services/auth_api";
 import logo from "../../../public/assets/gristipLogo.png";
 
 const SignUpPage = () => {
@@ -19,24 +20,12 @@ const SignUpPage = () => {
   const navigate = useNavigate();
 
   const handleSignUp = async (values) => {
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert("✅ Registration successful!");
-        navigate("/login");
-      } else {
-        alert(`❌ ${result.message}`);
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-      alert("❌ Signup failed. Please try again.");
+    const result = await register(values);
+    if (result.success) {
+      alert("✅ Registration successful!");
+      navigate("/login");
+    } else {
+      alert(`❌ ${result.message}`);
     }
   };
 
@@ -54,7 +43,6 @@ const SignUpPage = () => {
           width: isNonMobile ? "400px" : "90%",
           p: 4,
           borderRadius: "12px",
-          bgcolor: theme.palette.background.paper,
         }}
       >
         <Box textAlign="center" mb={3}>
@@ -88,7 +76,6 @@ const SignUpPage = () => {
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
-                variant="outlined"
                 label="Email"
                 name="email"
                 value={values.email}
@@ -96,25 +83,21 @@ const SignUpPage = () => {
                 onBlur={handleBlur}
                 error={!!touched.email && !!errors.email}
                 helperText={touched.email && errors.email}
-                sx={textFieldSx(theme)}
+                sx={{ mb: 2 }}
               />
-
               <TextField
                 fullWidth
-                variant="outlined"
-                label="Name"
-                name="name"
-                value={values.name}
+                label="Username"
+                name="username"
+                value={values.username}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                error={!!touched.name && !!errors.name}
-                helperText={touched.name && errors.name}
-                sx={textFieldSx(theme)}
+                error={!!touched.username && !!errors.username}
+                helperText={touched.username && errors.username}
+                sx={{ mb: 2 }}
               />
-
               <TextField
                 fullWidth
-                variant="outlined"
                 label="Mobile Number"
                 name="mobile"
                 value={values.mobile}
@@ -122,12 +105,10 @@ const SignUpPage = () => {
                 onBlur={handleBlur}
                 error={!!touched.mobile && !!errors.mobile}
                 helperText={touched.mobile && errors.mobile}
-                sx={textFieldSx(theme)}
+                sx={{ mb: 2 }}
               />
-
               <TextField
                 fullWidth
-                variant="outlined"
                 label="Password"
                 type="password"
                 name="password"
@@ -136,9 +117,20 @@ const SignUpPage = () => {
                 onBlur={handleBlur}
                 error={!!touched.password && !!errors.password}
                 helperText={touched.password && errors.password}
-                sx={textFieldSx(theme, true)}
+                sx={{ mb: 2 }}
               />
-
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                type="password"
+                name="confirmPassword"
+                value={values.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!touched.confirmPassword && !!errors.confirmPassword}
+                helperText={touched.confirmPassword && errors.confirmPassword}
+                sx={{ mb: 3 }}
+              />
               <Button
                 type="submit"
                 fullWidth
@@ -148,7 +140,6 @@ const SignUpPage = () => {
               >
                 Sign Up
               </Button>
-
               <Typography
                 variant="body2"
                 align="center"
@@ -166,43 +157,26 @@ const SignUpPage = () => {
   );
 };
 
-// Validation Schema
 const signupSchema = yup.object().shape({
   email: yup.string().email("Invalid email").required("Email is required"),
-  name: yup.string().required("Name is required"),
+  username: yup.string().required("Username is required"),
   mobile: yup
     .string()
-    .matches(/^[0-9]{10}$/, "Mobile number must be 10 digits")
+    .matches(/^\d{10}$/, "Mobile must be 10 digits")
     .required("Mobile number is required"),
   password: yup.string().min(6).required("Password is required"),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password"), null], "Passwords must match")
+    .required("Confirm Password is required"),
 });
 
-// Initial Form Values
 const initialValues = {
   email: "",
-  name: "",
+  username: "",
   mobile: "",
   password: "",
+  confirmPassword: "",
 };
-
-// Custom TextField Styling
-const textFieldSx = (theme, isLast = false) => ({
-  mb: isLast ? 3 : 2,
-  "& .MuiInputLabel-root": {
-    color: theme.palette.text.primary,
-  },
-  "& .MuiOutlinedInput-root": {
-    color: theme.palette.text.primary,
-    "& fieldset": {
-      borderColor: theme.palette.text.primary,
-    },
-    "&:hover fieldset": {
-      borderColor: theme.palette.secondary.main,
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: theme.palette.secondary.main,
-    },
-  },
-});
 
 export default SignUpPage;

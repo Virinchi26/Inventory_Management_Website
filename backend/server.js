@@ -6,6 +6,7 @@ const productRoutes = require("./routes/productRoutes");
 const warehouseRoutes = require("./routes/warehouseRoutes");
 const locationRoutes = require("./routes/locationRoutes");
 const stockAudit = require("./routes/stockAuditRoutes"); // Import stock audit route
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/warehouse", warehouseRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/stock", stockAudit); // Add stock audit route
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
