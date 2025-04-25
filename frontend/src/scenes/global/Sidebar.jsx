@@ -60,6 +60,7 @@ const Sidebar = () => {
     "/pie": "Pie Chart",
     "/line": "Line Chart",
     "/geography": "Geography Chart",
+    "/point-of-sale": "Point of Sale",
   };
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -162,6 +163,14 @@ const Sidebar = () => {
               icon={<PageviewIcon />}
               selected={selected}
               setSelected={setSelected}
+            />
+            <Item
+              title="Point of Sale"
+              to="/point-of-sale"
+              icon={<PageviewIcon />}
+              selected={selected}
+              setSelected={setSelected}
+
             />
 
             <Typography

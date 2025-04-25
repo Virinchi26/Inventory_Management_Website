@@ -23,6 +23,7 @@ import AddLocation from "./scenes/add_locations";
 import StockAuditForm from "./scenes/stock_audit";
 import LoginPage from "./scenes/auth/login";
 import SignUpPage from "./scenes/auth/register";
+import POSPage from "./scenes/point_of_sale";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -68,6 +69,7 @@ function App() {
               <Route path="/warehouse-stock" element={<WarehouseStock />} />
               <Route path="/transfer-stock" element={<TransferStock />} />
               <Route path="/stock-audit" element={<StockAuditForm />} />
+              <Route path="/point-of-sale" element={<POSPage />} />
             </Routes>
           </main>
         </div>
