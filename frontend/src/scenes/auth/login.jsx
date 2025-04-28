@@ -29,6 +29,7 @@ const LoginPage = () => {
       const result = await response.json();
 
       if (result.success) {
+        localStorage.setItem("isAuthenticated", "true"); // ✅ Save login state
         alert("✅ Login successful!");
         navigate("/dashboard"); // 🔁 Redirect to dashboard or landing page
       } else {

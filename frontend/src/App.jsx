@@ -23,6 +23,8 @@ import AddLocation from "./scenes/add_locations";
 import StockAuditForm from "./scenes/stock_audit";
 import LoginPage from "./scenes/auth/login";
 import SignUpPage from "./scenes/auth/register";
+import POSPage from "./scenes/point_of_sale";
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -65,12 +67,52 @@ function App() {
               <Route path="/geography" element={<Geography />} />
               <Route
                 path="/add-product-location"
-                element={<WearhouseHandle />}
+                element={
+                  <PrivateRoute>
+                    <WearhouseHandle />
+                  </PrivateRoute>
+                }
               />
-              <Route path="/add-locations" element={<AddLocation />} />
-              <Route path="/warehouse-stock" element={<WarehouseStock />} />
-              <Route path="/transfer-stock" element={<TransferStock />} />
-              <Route path="/stock-audit" element={<StockAuditForm />} />
+              <Route
+                path="/add-locations"
+                element={
+                  <PrivateRoute>
+                    <AddLocation />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/warehouse-stock"
+                element={
+                  <PrivateRoute>
+                    <WarehouseStock />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/transfer-stock"
+                element={
+                  <PrivateRoute>
+                    <TransferStock />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/stock-audit"
+                element={
+                  <PrivateRoute>
+                    <StockAuditForm />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/point-of-sale"
+                element={
+                  <PrivateRoute>
+                    <POSPage />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </main>
         </div>

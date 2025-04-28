@@ -16,9 +16,7 @@ const ProfileMenu = () => {
   };
 
   const handleLogout = () => {
-    // Optional: remove token or session data here
-    // localStorage.removeItem("token");
-
+    localStorage.removeItem("isAuthenticated");
     navigate("/login");
     handleClose();
   };
