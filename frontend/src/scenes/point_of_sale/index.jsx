@@ -34,6 +34,7 @@ const POSPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [discount, setDiscount] = useState(0);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === "dark";
 
@@ -135,6 +136,31 @@ const POSPage = () => {
     setCart((prev) => prev.filter((item) => item.productId !== productId));
   };
 
+const saveSaleToDB = async () => {
+  try {
+    const saleRes = await insertSale({
+      customerName: customerName.trim() || "N/A",
+      customerPhone: (mode === "delivery" ? customerPhone.trim() : "") || "N/A",
+      totalAmount,
+      paymentMethod,
+    });
+
+    if (saleRes.success && saleRes.saleId) {
+      await insertSaleItems(saleRes.saleId, cart);
+      return true; // sale saved successfully
+    } else {
+      alert("Failed to save sale.");
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error saving sale.");
+    return false;
+  }
+};
+
+
+
   const totalAmount = cart.reduce((sum, item) => sum + item.subtotal, 0);
 
   const printInvoice = () => {
@@ -200,35 +226,159 @@ const POSPage = () => {
     invoiceWindow.close();
   };
 
-  const handleSubmit = async () => {
-    if (cart.length === 0) return alert("Cart is empty.");
-    if (mode === "delivery" && customerPhone.length !== 10) {
-      return alert("Phone number must be 10 digits.");
-    }
+const handleSubmit = () => {
+  if (cart.length === 0) return alert("Cart is empty.");
+  if (mode === "delivery" && customerPhone.length !== 10) {
+    return alert("Phone number must be 10 digits.");
+  }
+  setInvoiceDialogOpen(true); // show invoice options
+};
 
-    printInvoice();
+const generatePDFInvoice = () => {
+  const invoiceHTML = `
+    <html>
+      <head>
+        <title>Invoice</title>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f4f4f4; }
+        </style>
+      </head>
+      <body>
+        <h2>🧾 Invoice</h2>
+        <p>Date: ${new Date().toLocaleString()}</p>
+        <p>Customer: ${customerName || "N/A"}</p>
+        <p>Phone: ${customerPhone || "N/A"}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Barcode</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Tax</th>
+              <th>Discount</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cart
+              .map(
+                (item) => `
+              <tr>
+                <td>${item.item_name}</td>
+                <td>${item.barcode}</td>
+                <td>${item.quantity}</td>
+                <td>₹${item.salePrice.toFixed(2)}</td>
+                <td>${item.tax}%</td>
+                <td>${item.discount}%</td>
+                <td>₹${item.subtotal.toFixed(2)}</td>
+              </tr>
+            `
+              )
+              .join("")}
+            <tr>
+              <td colspan="6" style="text-align:right; font-weight:bold;">Total:</td>
+              <td style="font-weight:bold;">₹${totalAmount.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Payment Method: ${paymentMethod}</p>
+      </body>
+    </html>
+  `;
 
-    try {
-      const saleRes = await insertSale({
-        customerName: customerName.trim() || "N/A",
-        customerPhone:
-          (mode === "delivery" ? customerPhone.trim() : "") || "N/A",
-        totalAmount,
-        paymentMethod,
-      });
+  const invoiceWindow = window.open("", "_blank", "width=800,height=600");
+  invoiceWindow.document.write(invoiceHTML);
+  invoiceWindow.document.close();
+  invoiceWindow.focus();
+  invoiceWindow.print();
+  invoiceWindow.close();
+};
 
-      if (saleRes.success && saleRes.saleId) {
-        await insertSaleItems(saleRes.saleId, cart);
-        alert("Sale recorded successfully.");
-        window.location.reload();
-      } else {
-        alert("Failed to save sale.");
+
+const generateThermalInvoice = () => {
+  const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const taxAmount = cart.reduce((sum, item) => {
+    const tax = (item.salePrice * item.tax) / 100;
+    return sum + tax * item.quantity;
+  }, 0);
+
+  const line = "----------------------------";
+
+  const printContent =
+    `Customer: ${customerName || "N/A"}\n` +
+    `Phone   : ${customerPhone || "N/A"}\n\n` +
+    `Payment Method: ${paymentMethod}\n` +
+    `${line}\n` +
+    `Item       Qty  Price  Amt\n` +
+    `${line}\n` +
+    cart
+      .map((item) => {
+        const name = item.item_name.length > 10 ? item.item_name.slice(0, 10) : item.item_name;
+        const amt = item.subtotal.toFixed(2);
+        return `${name.padEnd(10)} ${String(item.quantity).padStart(3)}  ₹${item.salePrice
+          .toFixed(2)
+          .padStart(5)} ₹${amt.padStart(6)}`;
+      })
+      .join("\n") +
+    `\n${line}\n` +
+    `Subtotal   : ${totalQty} items\n` +
+    `Amount     : ₹${totalAmount.toFixed(2)}\n` +
+    `${line}\n` +
+    `Tax Total  : ₹${taxAmount.toFixed(2)}\n` +
+    `${line}\n` +
+    `Total Amt  : ₹${(totalAmount + taxAmount).toFixed(2)}\n` +
+    `${line}\n\n` +
+    `Thank you for shopping!`;
+
+  const style = `
+    <style>
+      @media print {
+        body {
+          width: 58mm;
+          margin: 0;
+          font-family: monospace;
+          font-size: 12px;
+        }
+        pre {
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
       }
-    } catch (err) {
-      console.error(err);
-      alert("Error saving sale.");
-    }
-  };
+      body {
+        margin: 0;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        width: 58mm;
+      }
+    </style>
+  `;
+
+  const html = `
+    <html>
+      <head>
+        <title>Thermal Invoice</title>
+        ${style}
+      </head>
+      <body>
+        <pre>${printContent}</pre>
+      </body>
+    </html>
+  `;
+
+  const printWindow = window.open("", "_blank", "width=300,height=600");
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+};
+
+
 
   return (
     <Box
@@ -566,6 +716,44 @@ const POSPage = () => {
           <option value="credit">Credit</option>
           <option value="multiple">Multiple</option>
         </select>
+        <Dialog
+          open={invoiceDialogOpen}
+          onClose={() => setInvoiceDialogOpen(false)}
+        >
+          <DialogTitle>Select Invoice Type</DialogTitle>
+          <DialogContent>
+            <Typography>Choose how you'd like to print the invoice:</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={async () => {
+                const success = await saveSaleToDB();
+                if (success) {
+                  setInvoiceDialogOpen(false);
+                  generatePDFInvoice();
+                  setTimeout(() => window.location.reload(), 1000); // reload after printing
+                }
+              }}
+              style={{ color: isDarkMode ? "#fff" : "#000" }} // Adjust text color based on dark mode
+            >
+              PDF Invoice
+            </Button>
+            <Button
+              onClick={async () => {
+                const success = await saveSaleToDB();
+                if (success) {
+                  setInvoiceDialogOpen(false);
+                  generateThermalInvoice();
+                  setTimeout(() => window.location.reload(), 1000); // reload after printing
+                }
+              }}
+              style={{ color: isDarkMode ? "#fff" : "#000" }} // Adjust text color based on dark mode
+            >
+              Thermal Invoice
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Button
           onClick={handleSubmit}
           sx={{
