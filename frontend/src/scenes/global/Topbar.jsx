@@ -44,9 +44,6 @@ const Topbar = () => {
         <IconButton>
           <SettingsOutlinedIcon />
         </IconButton>
-        {/* <IconButton>
-          <PersonOutlinedIcon />
-        </IconButton> */}
 
         <ProfileMenu />
       </Box>

@@ -30,7 +30,9 @@ function App() {
   const location = useLocation();
 
   const isAuthPage =
-    location.pathname === "/login" || location.pathname === "/register";
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/";
 
   return (
     <ColorModeContext.Provider value={colorMode}>
@@ -48,7 +50,8 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<SignUpPage />} />
 
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<LoginPage />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/team" element={<Team />} />
               <Route path="/products" element={<Products />} />
               <Route path="/low-stock" element={<LowStock />} />

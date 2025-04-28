@@ -30,7 +30,7 @@ const LoginPage = () => {
 
       if (result.success) {
         alert("✅ Login successful!");
-        navigate("/"); // 🔁 Redirect to dashboard or landing page
+        navigate("/dashboard"); // 🔁 Redirect to dashboard or landing page
       } else {
         alert(`❌ ${result.message}`);
       }
