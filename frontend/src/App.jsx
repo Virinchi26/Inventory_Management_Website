@@ -24,6 +24,7 @@ import StockAuditForm from "./scenes/stock_audit";
 import LoginPage from "./scenes/auth/login";
 import SignUpPage from "./scenes/auth/register";
 import POSPage from "./scenes/point_of_sale";
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -49,27 +50,150 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<SignUpPage />} />
 
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/low-stock" element={<LowStock />} />
-              <Route path="/edit-product/:id" element={<EditProduct />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/form" element={<Form />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/bar" element={<Bar />} />
-              <Route path="/pie" element={<Pie />} />
-              <Route path="/line" element={<Line />} />
-              <Route path="/geography" element={<Geography />} />
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/team"
+                element={
+                  <PrivateRoute>
+                    <Team />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/products"
+                element={
+                  <PrivateRoute>
+                    <Products />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/low-stock"
+                element={
+                  <PrivateRoute>
+                    <LowStock />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/edit-product/:id"
+                element={
+                  <PrivateRoute>
+                    <EditProduct />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/invoices"
+                element={
+                  <PrivateRoute>
+                    <Invoices />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/form"
+                element={
+                  <PrivateRoute>
+                    <Form />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/faq"
+                element={
+                  <PrivateRoute>
+                    <FAQ />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/bar"
+                element={
+                  <PrivateRoute>
+                    <Bar />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/pie"
+                element={
+                  <PrivateRoute>
+                    <Pie />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/line"
+                element={
+                  <PrivateRoute>
+                    <Line />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/geography"
+                element={
+                  <PrivateRoute>
+                    <Geography />
+                  </PrivateRoute>
+                }
+              />
               <Route
                 path="/add-product-location"
-                element={<WearhouseHandle />}
+                element={
+                  <PrivateRoute>
+                    <WearhouseHandle />
+                  </PrivateRoute>
+                }
               />
-              <Route path="/add-locations" element={<AddLocation />} />
-              <Route path="/warehouse-stock" element={<WarehouseStock />} />
-              <Route path="/transfer-stock" element={<TransferStock />} />
-              <Route path="/stock-audit" element={<StockAuditForm />} />
-              <Route path="/point-of-sale" element={<POSPage />} />
+              <Route
+                path="/add-locations"
+                element={
+                  <PrivateRoute>
+                    <AddLocation />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/warehouse-stock"
+                element={
+                  <PrivateRoute>
+                    <WarehouseStock />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/transfer-stock"
+                element={
+                  <PrivateRoute>
+                    <TransferStock />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/stock-audit"
+                element={
+                  <PrivateRoute>
+                    <StockAuditForm />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/point-of-sale"
+                element={
+                  <PrivateRoute>
+                    <POSPage />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </main>
         </div>
