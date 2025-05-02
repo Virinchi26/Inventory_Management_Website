@@ -25,6 +25,8 @@ import LoginPage from "./scenes/auth/login";
 import SignUpPage from "./scenes/auth/register";
 import POSPage from "./scenes/point_of_sale";
 import PrivateRoute from "./components/PrivateRoute";
+import ChannelCard from "./scenes/channels/ChannelPage";
+import WooConnectForm from "./components/WooConnectForm";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -64,6 +66,8 @@ function App() {
               <Route path="/bar" element={<Bar />} />
               <Route path="/pie" element={<Pie />} />
               <Route path="/line" element={<Line />} />
+              <Route path="/channels" element={<ChannelCard />} />
+              <Route path="/woocommerce" element={<WooConnectForm />} />
               <Route path="/geography" element={<Geography />} />
               <Route
                 path="/add-product-location"

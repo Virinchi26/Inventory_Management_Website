@@ -1,0 +1,46 @@
+.card {
+    border: 1px solid #ccc;
+    padding: 20px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #f9f9f9;
+}
+
+.card-content {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.icon {
+    margin-right: 10px;
+    color: #000;
+}
+
+.woocommerce-link {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0073aa;
+    /* WooCommerce's blue color */
+    text-decoration: none;
+}
+
+.woocommerce-link:hover {
+    text-decoration: underline;
+}
+
+.connect-button {
+    padding: 10px 15px;
+    background-color: #0073aa;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.connect-button:hover {
+    background-color: #005d8c;
+}

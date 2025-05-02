@@ -20,6 +20,7 @@ import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import IosShareIcon from "@mui/icons-material/IosShare";
 import PageviewIcon from "@mui/icons-material/Pageview";
+import { ShopOutlined, ShoppingCart, ShopRounded, WifiChannel } from "@mui/icons-material";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -61,6 +62,7 @@ const Sidebar = () => {
     "/line": "Line Chart",
     "/geography": "Geography Chart",
     "/point-of-sale": "Point of Sale",
+    "/channels": "Channels",
   };
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -167,10 +169,17 @@ const Sidebar = () => {
             <Item
               title="Point of Sale"
               to="/point-of-sale"
-              icon={<PageviewIcon />}
+              icon={<ShoppingCart />}
               selected={selected}
               setSelected={setSelected}
 
+            />
+            <Item
+              title="Channels"
+              to="/channels"
+              icon={<ShopRounded />}
+              selected={selected}
+              setSelected={setSelected}
             />
 
             <Typography

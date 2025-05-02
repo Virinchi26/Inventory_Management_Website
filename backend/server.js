@@ -8,6 +8,7 @@ const locationRoutes = require("./routes/locationRoutes");
 const stockAudit = require("./routes/stockAuditRoutes"); // Import stock audit route
 const authRoutes = require("./routes/authRoutes");
 const pointOfSaleRoutes = require("./routes/pointOfSaleRoutes");
+const wooRoutes = require("./routes/wooRoutes"); // Import WooCommerce routes
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/api/locations", locationRoutes);
 app.use("/api/stock", stockAudit); // Add stock audit route
 app.use("/api/auth", authRoutes);
 app.use("/api/pointOfSale", pointOfSaleRoutes); // Add point of sale route
+app.use("/api/woocommerce", wooRoutes); // Add WooCommerce routes
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
