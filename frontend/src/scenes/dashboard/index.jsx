@@ -1,356 +1,253 @@
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
+import {
+  Box,
+  useTheme,
+  Card,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@mui/material";
+import { useEffect, useState } from "react";
 import { tokens } from "../../theme";
-import { mockTransactions } from "../../data/mockData";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EmailIcon from "@mui/icons-material/Email";
-import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import TrafficIcon from "@mui/icons-material/Traffic";
 import Header from "../../components/Header";
-import LineChart from "../../components/LineChart";
-import GeographyChart from "../../components/GeographyChart";
-import BarChart from "../../components/BarChart";
-import StatBox from "../../components/StatBox";
-import ProgressCircle from "../../components/ProgressCircle";
+import { fetchProducts, fetchLowStockProducts } from "../../services/api";
+import { getAllLocations } from "../../services/location_api";
+import { getWarehouseStock } from "../../services/wearhouse_api";
+
+import InventoryIcon from "@mui/icons-material/Inventory";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import WarningIcon from "@mui/icons-material/Warning";
+import StoreIcon from "@mui/icons-material/Store";
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
+  const [products, setProducts] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [warehouseStock, setWarehouseStock] = useState([]);
+
+  const [prevProductsCount, setPrevProductsCount] = useState(0);
+  const [prevLocationsCount, setPrevLocationsCount] = useState(0);
+  const [prevLowStockCount, setPrevLowStockCount] = useState(0);
+
+  useEffect(() => {
+    const prevProducts = Number(localStorage.getItem("prevProductsCount")) || 0;
+    const prevLocations =
+      Number(localStorage.getItem("prevLocationsCount")) || 0;
+    const prevLowStock = Number(localStorage.getItem("prevLowStockCount")) || 0;
+
+    setPrevProductsCount(prevProducts);
+    setPrevLocationsCount(prevLocations);
+    setPrevLowStockCount(prevLowStock);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("prevProductsCount", products.length);
+    localStorage.setItem("prevLocationsCount", locations.length);
+    localStorage.setItem("prevLowStockCount", lowStockProducts.length);
+  }, [products.length, locations.length, lowStockProducts.length]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const productsData = await fetchProducts();
+        const locationsData = await getAllLocations();
+        const lowStockData = await fetchLowStockProducts();
+        const warehouseData = await getWarehouseStock();
+
+        const normalizedLocations = locationsData.map((location) => ({
+          ...location,
+          location_name: location.location_name.toLowerCase(),
+        }));
+
+        const normalizedWarehouseStock = warehouseData.map((stock) => ({
+          ...stock,
+          location_name: stock.location_name.toLowerCase(),
+        }));
+
+        setProducts(productsData);
+        setLocations(normalizedLocations);
+        setLowStockProducts(lowStockData);
+        setWarehouseStock(normalizedWarehouseStock);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const previousStockPerLocation = [];
+
+  const stockPerLocation = locations.map((location) => {
+    const locationStock = warehouseStock.filter(
+      (stock) => stock.location_name === location.location_name
+    );
+    const totalStock = locationStock.reduce(
+      (sum, stock) => sum + stock.stock_quantity,
+      0
+    );
+
+    const prev = previousStockPerLocation.find(
+      (l) => l.location === location.location_name
+    );
+    const previousStock = prev ? prev.totalStock : 0;
+
+    const diff = totalStock - previousStock;
+    const increase = diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : "0";
+
+    return {
+      location: location.location_name,
+      totalStock,
+      increase,
+    };
+  });
+
+  const productStockData = products.map((product) => {
+    const stockByLocation = locations.map((location) => {
+      const stock = warehouseStock.find(
+        (item) =>
+          item.product_name === product.item_name &&
+          item.location_name.toLowerCase() ===
+            location.location_name.toLowerCase()
+      );
+      return {
+        location: location.location_name,
+        stock: stock ? stock.stock_quantity : 0,
+      };
+    });
+    return { productName: product.item_name, stockByLocation };
+  });
+
+  const productDiff = products.length - prevProductsCount;
+  const locationDiff = locations.length - prevLocationsCount;
+  const lowStockDiff = lowStockProducts.length - prevLowStockCount;
+
+  const productIncrease =
+    productDiff > 0 ? `+${productDiff}` : `${productDiff}`;
+  const locationIncrease =
+    locationDiff > 0 ? `+${locationDiff}` : `${locationDiff}`;
+  const lowStockIncrease =
+    lowStockDiff > 0 ? `+${lowStockDiff}` : `${lowStockDiff}`;
+
+  const renderCard = (title, value, increase, IconComponent) => (
+    <Card
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        height: 100,
+        backgroundColor: colors.primary[400],
+        color: colors.grey[100],
+        borderRadius: 2,
+        p: 2,
+        boxShadow: 3,
+      }}
+    >
+      <Box>
+        <Typography variant="h4" fontWeight="bold" lineHeight={1.2}>
+          {value}
+        </Typography>
+        <Typography variant="h5" fontWeight="medium">
+          {title}
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ mt: 0.5 }}
+          color={colors.greenAccent[400]}
+        >
+          {increase} from last time
+        </Typography>
+      </Box>
+      <IconComponent sx={{ fontSize: 32, color: colors.greenAccent[400] }} />
+    </Card>
+  );
+
   return (
     <Box m="20px">
-      {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
-
-        <Box>
-          <Button
-            sx={{
-              backgroundColor: colors.blueAccent[700],
-              color: colors.grey[100],
-              fontSize: "14px",
-              fontWeight: "bold",
-              padding: "10px 20px",
-            }}
-          >
-            <DownloadOutlinedIcon sx={{ mr: "10px" }} />
-            Download Reports
-          </Button>
-        </Box>
       </Box>
 
-      {/* GRID & CHARTS */}
       <Box
         display="grid"
-        gridTemplateColumns="repeat(12, 1fr)"
-        gridAutoRows="140px"
+        gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))"
         gap="20px"
+        mt={2}
       >
-        {/* ROW 1 */}
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="12,361"
-            subtitle="Emails Sent"
-            progress="0.75"
-            increase="+14%"
-            icon={
-              <EmailIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="431,225"
-            subtitle="Sales Obtained"
-            progress="0.50"
-            increase="+21%"
-            icon={
-              <PointOfSaleIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="32,441"
-            subtitle="New Clients"
-            progress="0.30"
-            increase="+5%"
-            icon={
-              <PersonAddIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        {/* ROW 2 */}
-        <Box
-          gridColumn="span 8"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-        >
-          <Box
-            mt="25px"
-            p="0 30px"
-            display="flex "
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box>
-              <Typography
-                variant="h5"
-                fontWeight="600"
-                color={colors.grey[100]}
-              >
-                Revenue Generated
-              </Typography>
-              <Typography
-                variant="h3"
-                fontWeight="bold"
-                color={colors.greenAccent[500]}
-              >
-                $59,342.32
-              </Typography>
-            </Box>
-            <Box>
-              <IconButton>
-                <DownloadOutlinedIcon
-                  sx={{ fontSize: "26px", color: colors.greenAccent[500] }}
-                />
-              </IconButton>
-            </Box>
-          </Box>
-          <Box height="250px" m="-20px 0 0 0">
-            <LineChart isDashboard={true} />
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          overflow="auto"
-        >
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            borderBottom={`4px solid ${colors.primary[500]}`}
-            colors={colors.grey[100]}
-            p="15px"
-          >
-            <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-              Recent Transactions
-            </Typography>
-          </Box>
-          {mockTransactions.map((transaction, i) => (
-            <Box
-              key={`${transaction.txId}-${i}`}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              borderBottom={`4px solid ${colors.primary[500]}`}
-              p="15px"
-            >
-              <Box>
-                <Typography
-                  color={colors.greenAccent[500]}
-                  variant="h5"
-                  fontWeight="600"
-                >
-                  {transaction.txId}
-                </Typography>
-                <Typography color={colors.grey[100]}>
-                  {transaction.user}
-                </Typography>
-              </Box>
-              <Box color={colors.grey[100]}>{transaction.date}</Box>
-              <Box
-                backgroundColor={colors.greenAccent[500]}
-                p="5px 10px"
-                borderRadius="4px"
-              >
-                ${transaction.cost}
-              </Box>
-            </Box>
-          ))}
-        </Box>
+        {renderCard(
+          "Total Products",
+          products.length,
+          productIncrease,
+          InventoryIcon
+        )}
+        {renderCard(
+          "Total Locations",
+          locations.length,
+          locationIncrease,
+          LocationOnIcon
+        )}
+        {renderCard(
+          "Low Stock Products",
+          lowStockProducts.length,
+          lowStockIncrease,
+          WarningIcon
+        )}
 
-        {/* ROW 3 */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          p="30px"
-        >
-          <Typography variant="h5" fontWeight="600">
-            Campaign
-          </Typography>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            mt="25px"
-          >
-            <ProgressCircle size="125" />
-            <Typography
-              variant="h5"
-              color={colors.greenAccent[500]}
-              sx={{ mt: "15px" }}
-            >
-              $48,352 revenue generated
-            </Typography>
-            <Typography>Includes extra misc expenditures and costs</Typography>
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-        >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            sx={{ padding: "30px 30px 0 30px" }}
-          >
-            Sales Quantity
-          </Typography>
-          <Box height="250px" mt="-20px">
-            <BarChart isDashboard={true} />
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          padding="30px"
-        >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            sx={{ marginBottom: "15px" }}
-          >
-            Geography Based Traffic
-          </Typography>
-          <Box height="200px">
-            <GeographyChart isDashboard={true} />
-          </Box>
-        </Box>
+        {stockPerLocation.map((locationData) =>
+          renderCard(
+            `Stock at ${locationData.location}`,
+            locationData.totalStock,
+            locationData.increase,
+            StoreIcon
+          )
+        )}
+      </Box>
+
+      <Box
+        mt="30px"
+        backgroundColor={colors.primary[400]}
+        p="20px"
+        borderRadius="8px"
+        boxShadow={2}
+      >
+        <Header
+          title="Product Stock by Location"
+          subtitle="Detailed stock data for each product"
+        />
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell
+                sx={{ fontWeight: "bold", color: colors.greenAccent[400] }}
+              >
+                Product Name
+              </TableCell>
+              {locations.map((location, index) => (
+                <TableCell
+                  key={index}
+                  sx={{ fontWeight: "bold", color: colors.greenAccent[400] }}
+                >
+                  {location.location_name}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {productStockData.map((product, index) => (
+              <TableRow key={index}>
+                <TableCell>{product.productName}</TableCell>
+                {product.stockByLocation.map((stock, idx) => (
+                  <TableCell key={idx}>{stock.stock}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Box>
     </Box>
   );
